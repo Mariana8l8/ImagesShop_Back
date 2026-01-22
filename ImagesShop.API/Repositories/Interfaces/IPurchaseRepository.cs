@@ -1,6 +1,6 @@
 ﻿namespace ImagesShop.API.Repositories.Interfaces
 {
-    public interface IAdminRepository
+    public interface IPurchaseRepository
     {
     }
 }

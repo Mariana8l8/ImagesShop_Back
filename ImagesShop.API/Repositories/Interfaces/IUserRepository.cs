@@ -11,3 +11,4 @@ namespace ImagesShop.API.Repositories.Interfaces
         Task DeleteAsync(Guid id, CancellationToken ct = default);
     }
 }
+ 
