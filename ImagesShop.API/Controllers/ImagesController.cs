@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ImagesShop.API.Controllers
 {
-    [ApiController]
+    [ApiController] 
     [Route("api/[controller]")]
     public class ImagesController : ControllerBase
     {
@@ -36,7 +36,7 @@ namespace ImagesShop.API.Controllers
             return img is null ? NotFound() : Ok(img);
         }
 
-        [HttpPost]
+        [HttpPost(Name = "AddImage")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
