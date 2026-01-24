@@ -6,43 +6,43 @@ namespace ImagesShop.API.Repositories
 {
     public class ImageRepository : IImageRepository
     {
-        private readonly AppDbContext _db;
+        private readonly AppDbContext _database;
 
-        public ImageRepository(AppDbContext db)
+        public ImageRepository(AppDbContext database)
         {
-            _db = db; 
+            _database = database;
+        }
+        public async Task<IEnumerable<Image>> GetAllAsync(CancellationToken ct = default)
+        {
+            return await _database.Images
+                .AsNoTracking()
+                .ToListAsync(ct);
+        }
+        public async Task<Image?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        {
+            return await _database.Images
+                .Include(i => i.Tags)
+                .FirstOrDefaultAsync(image => image.Id == id, ct);
         }
 
         public async Task AddAsync(Image image, CancellationToken ct = default)
         {
-            await _db.Images.AddAsync(image, ct);
-        }
-
-        public async Task DeleteAsync(Guid id, CancellationToken ct = default)
-        {
-            var entity = await _db.Images.FindAsync(new object[] { id }, ct);
-            if (entity is not null)
-                _db.Images.Remove(entity);
-        }
-
-        public async Task<IEnumerable<Image>> GetAllAsync(CancellationToken ct = default)
-        {
-            return await _db.Images
-                .AsNoTracking()
-                .ToListAsync(ct);
-        }
-
-        public async Task<Image?> GetByIdAsync(Guid id, CancellationToken ct = default)
-        {
-            return await _db.Images
-                .Include(i => i.Tags)
-                .FirstOrDefaultAsync(i => i.Id == id, ct);
+            await _database.Images.AddAsync(image, ct);
         }
 
         public Task UpdateAsync(Image image, CancellationToken ct = default)
         {
-            _db.Images.Update(image);
+            _database.Images.Update(image);
             return Task.CompletedTask;
+        }
+
+        public async Task DeleteAsync(Guid id, CancellationToken ct = default)
+        {
+            var entity = await _database.Images.FindAsync(new object[] { id }, ct);
+            if (entity is not null)
+            {
+                _database.Images.Remove(entity);
+            }
         }
     }
 }
