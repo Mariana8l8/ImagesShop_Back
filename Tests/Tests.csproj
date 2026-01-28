@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ImageShop.API\ImagesShop.API.csproj" />
+    <ProjectReference Include="..\ImagesShop.API\ImagesShop.API.csproj" />
   </ItemGroup>
 
   <ItemGroup>
