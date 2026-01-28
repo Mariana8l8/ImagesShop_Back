@@ -8,7 +8,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Register Infrastructure and Application
 builder.Services.AddInfrastructureServices(builder.Configuration.GetConnectionString("DefaultConnection"));
 builder.Services.AddApplicationServices();
 
@@ -29,7 +28,6 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
-// Run data seeding using Infrastructure.DbInitializer
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;

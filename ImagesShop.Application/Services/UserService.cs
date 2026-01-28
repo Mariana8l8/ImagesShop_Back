@@ -50,12 +50,10 @@ namespace ImagesShop.Application.Services
             var existing = await _repository.GetByIdAsync(user.Id, cancellationToken);
             if (existing is null) throw new InvalidOperationException("User not found");
 
-            // map safe updatable fields
             existing.Name = user.Name ?? existing.Name;
             existing.Email = user.Email ?? existing.Email;
             existing.PasswordHash = user.PasswordHash ?? existing.PasswordHash;
 
-            // allow admin or business logic to change balance explicitly
             existing.Balance = user.Balance;
 
             await _repository.UpdateAsync(existing, cancellationToken);

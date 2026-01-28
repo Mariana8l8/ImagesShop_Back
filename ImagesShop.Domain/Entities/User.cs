@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace ImagesShop.Domain.Entities
 {
     public class User

@@ -1,5 +1,5 @@
-using Microsoft.EntityFrameworkCore;
 using ImagesShop.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace ImagesShop.Infrastructure.Data
 {
@@ -46,7 +46,7 @@ namespace ImagesShop.Infrastructure.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<OrderItem>()
-                    .HasOne(orderItem => orderItem.Image)
+                .HasOne(orderItem => orderItem.Image)
                 .WithMany()
                 .HasForeignKey(orderItem => orderItem.ImageId)
                 .OnDelete(DeleteBehavior.Restrict);

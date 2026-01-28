@@ -31,12 +31,13 @@ namespace ImagesShop.Infrastructure.Repositories
         public async Task AddAsync(OrderItem orderItem, CancellationToken cancellationToken = default)
         {
             await _database.OrderItems.AddAsync(orderItem, cancellationToken);
+            await _database.SaveChangesAsync(cancellationToken);
         }
 
-        public Task UpdateAsync(OrderItem orderItem, CancellationToken cancellationToken = default)
+        public async Task UpdateAsync(OrderItem orderItem, CancellationToken cancellationToken = default)
         {
             _database.OrderItems.Update(orderItem);
-            return Task.CompletedTask;
+            await _database.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
@@ -45,6 +46,7 @@ namespace ImagesShop.Infrastructure.Repositories
             if (entity is not null)
             {
                 _database.OrderItems.Remove(entity);
+                await _database.SaveChangesAsync(cancellationToken);
             }
         }
 

@@ -22,7 +22,5 @@ namespace ImagesShop.Domain.Entities
         public Category? Category { get; set; }
 
         public ICollection<ImageTag> Tags { get; set; } = new List<ImageTag>();
-
-        public ICollection<Image> Users { get; set; } = new List<Image>();
     }
 }
