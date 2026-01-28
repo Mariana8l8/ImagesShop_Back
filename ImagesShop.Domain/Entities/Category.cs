@@ -1,4 +1,6 @@
-﻿namespace ImagesShop.API.Models
+using System;
+
+namespace ImagesShop.Domain.Entities
 {
     public class Category
     {

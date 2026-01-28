@@ -1,6 +1,6 @@
-﻿using ImagesShop.API.Models;
+using System;
 
-namespace ImagesShop.API.Models
+namespace ImagesShop.Domain.Entities
 {
     public class ImageTag
     {

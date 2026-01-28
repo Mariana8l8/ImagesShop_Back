@@ -1,8 +1,6 @@
-﻿using ImagesShop.API.Models;
-
-namespace ImagesShop.API.Models
+﻿namespace ImagesShop.Application.DTOs
 {
-    public class Image
+    public class ImageDTO
     {
         public Guid Id { get; set; }
 
@@ -10,16 +8,12 @@ namespace ImagesShop.API.Models
 
         public string Description { get; set; } = string.Empty;
 
-        public decimal Price { get; set; } = 0;
+        public decimal Price { get; set; }
 
         public string WatermarkedUrl { get; set; } = string.Empty;
 
         public string OriginalUrl { get; set; } = string.Empty;
 
         public Guid CategoryId { get; set; }
-
-        public Category? Category { get; set; }
-
-        public ICollection<ImageTag> Tags { get; set; } = new List<ImageTag>();
     }
 }

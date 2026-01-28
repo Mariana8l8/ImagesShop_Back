@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace ImagesShop.API.Models
+namespace ImagesShop.Domain.Entities
 {
     public class OrderItem
     {

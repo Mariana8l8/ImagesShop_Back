@@ -1,14 +1,12 @@
-﻿using ImagesShop.API.Models.Enums;
+﻿using ImagesShop.Domain.Enums;
 
-namespace ImagesShop.API.Models
+namespace ImagesShop.Application.DTOs
 {
-    public class Order
+    public class OrderDTO
     {
         public Guid Id { get; set; }
 
         public Guid UserId { get; set; }
-
-        public User? User { get; set; }
 
         public DateTime CreatedAt { get; set; }
 
@@ -16,10 +14,10 @@ namespace ImagesShop.API.Models
 
         public decimal TotalAmount { get; set; }
 
-        public string Currency { get; set; } = "USD";
+        public string Currency { get; set; } = string.Empty;
 
         public string? Notes { get; set; }
 
-        public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
+        public ICollection<OrderItemDTO> Items { get; set; } = new List<OrderItemDTO>();
     }
 }

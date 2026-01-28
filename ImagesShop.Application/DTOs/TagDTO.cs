@@ -1,8 +1,8 @@
-﻿using ImagesShop.API.Models;
+﻿using System;
 
-namespace ImagesShop.API.Models
+namespace ImagesShop.Application.DTOs
 {
-    public class Tag
+    public class TagDTO
     {
         public Guid Id { get; set; }
 

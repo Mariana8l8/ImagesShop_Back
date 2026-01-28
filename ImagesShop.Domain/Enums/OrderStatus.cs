@@ -1,4 +1,4 @@
-﻿namespace ImagesShop.API.Models.Enums
+namespace ImagesShop.Domain.Enums
 {
     public enum OrderStatus
     {

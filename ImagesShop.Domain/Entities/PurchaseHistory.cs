@@ -1,4 +1,4 @@
-﻿namespace ImagesShop.API.Models
+namespace ImagesShop.Domain.Entities
 {
     public class PurchaseHistory
     {
