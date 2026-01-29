@@ -11,6 +11,20 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddInfrastructureServices(builder.Configuration.GetConnectionString("DefaultConnection"));
 builder.Services.AddApplicationServices();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(
+                "http://localhost:5173",
+                "http://localhost:4173",
+                "http://localhost:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
 Log.Logger = new LoggerConfiguration().MinimumLevel.Information()
    .WriteTo.File("log/ImagesShopLogs.txt", rollingInterval: RollingInterval.Day).CreateLogger();
 
@@ -27,6 +41,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+
+app.UseCors("AllowFrontend");
 
 using (var scope = app.Services.CreateScope())
 {
