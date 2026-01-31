@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using ImagesShop.Domain.Enums;
 
 namespace ImagesShop.Application.DTOs
 {
@@ -12,6 +13,8 @@ namespace ImagesShop.Application.DTOs
         public string Email { get; set; } = string.Empty;
 
         public decimal Balance { get; set; }
+
+        public UserRole Role { get; set; } = UserRole.User;
 
         public ICollection<Guid> WishlistIds { get; set; } = new List<Guid>();
     }

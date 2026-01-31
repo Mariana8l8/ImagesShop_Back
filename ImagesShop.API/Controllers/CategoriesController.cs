@@ -1,6 +1,7 @@
 ﻿using ImagesShop.Application.DTOs;
 using ImagesShop.Application.Interfaces.IServices;
 using ImagesShop.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ImagesShop.API.Controllers
@@ -17,6 +18,7 @@ namespace ImagesShop.API.Controllers
         }
 
         [HttpGet(Name = "GetAllCategories")]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
@@ -27,6 +29,7 @@ namespace ImagesShop.API.Controllers
         }
 
         [HttpGet("{id:guid}", Name = "GetCategoryById")]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -38,6 +41,7 @@ namespace ImagesShop.API.Controllers
         }
 
         [HttpPost(Name = "AddCategory")]
+        [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -49,6 +53,7 @@ namespace ImagesShop.API.Controllers
         }
 
         [HttpPut("{id:guid}", Name = "ChangeCategoryById")]
+        [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -61,6 +66,7 @@ namespace ImagesShop.API.Controllers
         }
 
         [HttpDelete("{id:guid}", Name = "DeleteCategoryById")]
+        [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)

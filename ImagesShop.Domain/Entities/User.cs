@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ImagesShop.Domain.Enums;
 
 namespace ImagesShop.Domain.Entities
 {
@@ -13,10 +14,16 @@ namespace ImagesShop.Domain.Entities
 
         public string PasswordHash { get; set; } = string.Empty;
 
-        public decimal Balance { get; set; } = 0;
+        public string PasswordSalt { get; set; } = string.Empty;
+
+        public decimal Balance { get; set; }
+
+        public UserRole Role { get; set; } = UserRole.User;
 
         public ICollection<Order> Orders { get; set; } = new List<Order>();
 
         public ICollection<Image> Wishlist { get; set; } = new List<Image>();
+
+        public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     }
 }

@@ -1,13 +1,14 @@
-﻿
-using ImagesShop.Application.DTOs;
+﻿using ImagesShop.Application.DTOs;
 using ImagesShop.Application.Interfaces.IServices;
 using ImagesShop.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ImagesShop.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Policy = "AdminOnly")]
     public class UsersController : ControllerBase
     {
         private readonly IUserService _user;

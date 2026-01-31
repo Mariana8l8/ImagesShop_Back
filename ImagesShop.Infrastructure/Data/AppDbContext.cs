@@ -15,6 +15,7 @@ namespace ImagesShop.Infrastructure.Data
         public DbSet<Tag> Tags { get; set; } = null!;
         public DbSet<ImageTag> ImageTags { get; set; } = null!;
         public DbSet<PurchaseHistory> Purchases { get; set; } = null!;
+        public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -74,6 +75,16 @@ namespace ImagesShop.Infrastructure.Data
             modelBuilder.Entity<PurchaseHistory>()
                 .Property(purchaseHistory => purchaseHistory.PurchasedAt)
                 .HasDefaultValueSql("GETUTCDATE()");
+
+            modelBuilder.Entity<RefreshToken>()
+                .HasOne(refreshToken => refreshToken.User)
+                .WithMany(user => user.RefreshTokens)
+                .HasForeignKey(refreshToken => refreshToken.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<RefreshToken>()
+                .HasIndex(refreshToken => refreshToken.Token)
+                .IsUnique();
         }
     }
 }

@@ -1,6 +1,7 @@
 using ImagesShop.Application.Interfaces.IRepositories;
 using ImagesShop.Application.Interfaces.IServices;
 using ImagesShop.Domain.Entities;
+using ImagesShop.Domain.Enums;
 
 namespace ImagesShop.Application.Services
 {
@@ -24,6 +25,12 @@ namespace ImagesShop.Application.Services
             return await _repository.GetByIdAsync(id, cancellationToken);
         }
 
+        public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(email)) return null;
+            return await _repository.GetByEmailAsync(email, cancellationToken);
+        }
+
         public async Task<User> CreateAsync(User user, CancellationToken cancellationToken = default)
         {
             if (user is null) throw new ArgumentNullException(nameof(user));
@@ -34,9 +41,12 @@ namespace ImagesShop.Application.Services
             user.Email ??= string.Empty;
             user.Name ??= string.Empty;
             user.PasswordHash ??= string.Empty;
+            user.PasswordSalt ??= string.Empty;
             user.Balance = user.Balance < 0m ? 0m : user.Balance;
+            user.Role = user.Role == 0 ? UserRole.User : user.Role;
             user.Wishlist ??= new List<Image>();
             user.Orders ??= new List<Order>();
+            user.RefreshTokens ??= new List<RefreshToken>();
 
             await _repository.AddAsync(user, cancellationToken);
             return user;
@@ -52,9 +62,10 @@ namespace ImagesShop.Application.Services
 
             existing.Name = user.Name ?? existing.Name;
             existing.Email = user.Email ?? existing.Email;
-            existing.PasswordHash = user.PasswordHash ?? existing.PasswordHash;
-
+            existing.PasswordHash = string.IsNullOrWhiteSpace(user.PasswordHash) ? existing.PasswordHash : user.PasswordHash;
+            existing.PasswordSalt = string.IsNullOrWhiteSpace(user.PasswordSalt) ? existing.PasswordSalt : user.PasswordSalt;
             existing.Balance = user.Balance;
+            existing.Role = user.Role;
 
             await _repository.UpdateAsync(existing, cancellationToken);
         }

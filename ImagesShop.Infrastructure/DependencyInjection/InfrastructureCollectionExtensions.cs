@@ -18,7 +18,7 @@ namespace ImagesShop.Infrastructure.DependencyInjection
                 );
             }
 
-            //services.AddScoped<IAuthRepository, AuthRepository>();
+            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<ICategoryRepository, CategoryRepository>();
             services.AddScoped<IImageRepository, ImageRepository>();
             services.AddScoped<IOrderItemRepository, OrderItemRepository>();

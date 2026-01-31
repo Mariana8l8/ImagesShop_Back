@@ -1,7 +1,9 @@
 using ImagesShop.Application.DTOs;
 using ImagesShop.Application.Interfaces.IServices;
 using ImagesShop.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ImagesShop.API.Controllers
 {
@@ -10,23 +12,37 @@ namespace ImagesShop.API.Controllers
     public class ImagesController : ControllerBase
     {
         private readonly IImageService _images;
+        private readonly IOrderService _orders;
 
-        public ImagesController(IImageService images)
+        public ImagesController(IImageService images, IOrderService orders)
         {
             _images = images;
+            _orders = orders;
         }
 
         [HttpGet(Name = "GetAllImages")]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
             var list = await _images.GetAllAsync(cancellationToken);
-            var dto = list.Select(MapToDto);
+            var userId = GetUserId();
+            var dto = new List<ImageDTO>();
+            foreach (var image in list)
+            {
+                var mapped = MapToDto(image);
+                if (userId is null || !await HasPurchasedAsync(userId.Value, image.Id, cancellationToken))
+                {
+                    mapped.OriginalUrl = string.Empty;
+                }
+                dto.Add(mapped);
+            }
             return Ok(dto);
         }
 
         [HttpGet("{id:guid}", Name = "GetImageById")]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -34,10 +50,20 @@ namespace ImagesShop.API.Controllers
         public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
         {
             var img = await _images.GetByIdAsync(id, cancellationToken);
-            return img is null ? NotFound() : Ok(MapToDto(img));
+            if (img is null) return NotFound();
+
+            var dto = MapToDto(img);
+            var userId = GetUserId();
+            if (userId is null || !await HasPurchasedAsync(userId.Value, id, cancellationToken))
+            {
+                dto.OriginalUrl = string.Empty;
+            }
+
+            return Ok(dto);
         }
 
         [HttpPost(Name = "AddImage")]
+        [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -49,6 +75,7 @@ namespace ImagesShop.API.Controllers
         }
 
         [HttpPut("{id:guid}", Name = "ChangeImageById")]
+        [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -61,6 +88,7 @@ namespace ImagesShop.API.Controllers
         }
 
         [HttpDelete("{id:guid}", Name = "DeleteImageById")]
+        [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
@@ -90,5 +118,17 @@ namespace ImagesShop.API.Controllers
             OriginalUrl = dto.OriginalUrl,
             CategoryId = dto.CategoryId
         };
+
+        private Guid? GetUserId()
+        {
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(ClaimTypes.Name);
+            return Guid.TryParse(sub, out var id) ? id : null;
+        }
+
+        private async Task<bool> HasPurchasedAsync(Guid userId, Guid imageId, CancellationToken cancellationToken)
+        {
+            var orders = await _orders.GetAllAsync(cancellationToken);
+            return orders.Any(o => o.UserId == userId && o.Items.Any(i => i.ImageId == imageId));
+        }
     }
 }

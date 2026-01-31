@@ -24,8 +24,16 @@ namespace ImagesShop.Infrastructure.Repositories
         public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             return await _database.Users
+                .Include(user => user.RefreshTokens)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(user => user.Id == id, cancellationToken);
+        }
+
+        public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+        {
+            return await _database.Users
+                .Include(user => user.RefreshTokens)
+                .FirstOrDefaultAsync(user => user.Email == email, cancellationToken);
         }
 
         public async Task AddAsync(User user, CancellationToken cancellationToken = default)
@@ -43,7 +51,7 @@ namespace ImagesShop.Infrastructure.Repositories
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var entity = await _database.Users.FindAsync(new object[] { id }, cancellationToken);
-            if (entity is not null) 
+            if (entity is not null)
             {
                 _database.Users.Remove(entity);
                 await _database.SaveChangesAsync(cancellationToken);
