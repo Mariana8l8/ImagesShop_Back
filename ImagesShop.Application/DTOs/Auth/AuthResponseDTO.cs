@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using ImagesShop.Domain.Enums;
 
 namespace ImagesShop.Application.DTOs.Auth
@@ -6,6 +7,7 @@ namespace ImagesShop.Application.DTOs.Auth
     {
         public string AccessToken { get; set; } = string.Empty;
 
+        [JsonIgnore]
         public string RefreshToken { get; set; } = string.Empty;
 
         public DateTime ExpiresAtUtc { get; set; }

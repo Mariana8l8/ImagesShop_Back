@@ -6,6 +6,7 @@ namespace ImagesShop.Application.Interfaces.IServices
     {
         Task<AuthResponseDTO> RegisterAsync(RegisterRequestDTO request, CancellationToken cancellationToken = default);
         Task<AuthResponseDTO> LoginAsync(LoginRequestDTO request, CancellationToken cancellationToken = default);
-        Task<AuthResponseDTO> RefreshAsync(RefreshRequestDTO request, CancellationToken cancellationToken = default);
+        Task<AuthResponseDTO> RefreshAsync(string refreshToken, CancellationToken cancellationToken = default);
+        Task LogoutAsync(string refreshToken, CancellationToken cancellationToken = default);
     }
 }

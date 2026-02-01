@@ -1,6 +1,8 @@
-﻿using ImagesShop.Application.DTOs;
+﻿using ClosedXML.Excel;
+using ImagesShop.Application.DTOs;
 using ImagesShop.Application.Interfaces.IServices;
 using ImagesShop.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ImagesShop.API.Controllers
@@ -55,6 +57,42 @@ namespace ImagesShop.API.Controllers
         {
             await _purchaseService.DeleteAsync(id, cancellationToken);
             return NoContent();
+        }
+
+        [HttpGet("export", Name = "ExportPurchases")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> Export(CancellationToken cancellationToken)
+        {
+            var purchases = await _purchaseService.GetAllAsync(cancellationToken);
+            using var workbook = new XLWorkbook();
+            var ws = workbook.Worksheets.Add("Purchases");
+
+            ws.Cell(1, 1).Value = "UserName";
+            ws.Cell(1, 2).Value = "UserEmail";
+            ws.Cell(1, 3).Value = "ImageId";
+            ws.Cell(1, 4).Value = "ImageTitle";
+            ws.Cell(1, 5).Value = "ImagePrice";
+            ws.Cell(1, 6).Value = "PurchasedAt";
+
+            var row = 2;
+            foreach (var purchase in purchases)
+            {
+                ws.Cell(row, 1).Value = purchase.UserName;
+                ws.Cell(row, 2).Value = purchase.UserEmail;
+                ws.Cell(row, 3).Value = purchase.ImageId.ToString();
+                ws.Cell(row, 4).Value = purchase.ImageTitle;
+                ws.Cell(row, 5).Value = purchase.ImagePrice;
+                ws.Cell(row, 6).Value = purchase.PurchasedAt;
+                row++;
+            }
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            stream.Position = 0;
+
+            var fileName = $"purchases-{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx";
+            const string contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            return File(stream.ToArray(), contentType, fileName);
         }
 
         private static PurchaseHistoryDTO MapToDto(PurchaseHistory purchaseHistory) => new PurchaseHistoryDTO

@@ -1,4 +1,5 @@
-﻿using ImagesShop.Application.DTOs;
+﻿using System.Security.Claims;
+using ImagesShop.Application.DTOs;
 using ImagesShop.Application.Interfaces.IServices;
 using ImagesShop.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -8,7 +9,6 @@ namespace ImagesShop.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Policy = "AdminOnly")]
     public class UsersController : ControllerBase
     {
         private readonly IUserService _user;
@@ -19,6 +19,7 @@ namespace ImagesShop.API.Controllers
         }
 
         [HttpGet(Name = "GetAllUsers")]
+        [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
@@ -29,6 +30,7 @@ namespace ImagesShop.API.Controllers
         }
 
         [HttpGet("{id:guid}", Name = "GetUserById")]
+        [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -40,6 +42,7 @@ namespace ImagesShop.API.Controllers
         }
 
         [HttpPost(Name = "AddUser")]
+        [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -51,6 +54,7 @@ namespace ImagesShop.API.Controllers
         }
 
         [HttpPut("{id:guid}", Name = "ChangeUserById")]
+        [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -63,6 +67,7 @@ namespace ImagesShop.API.Controllers
         }
 
         [HttpDelete("{id:guid}", Name = "DeleteUserById")]
+        [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
@@ -71,13 +76,29 @@ namespace ImagesShop.API.Controllers
             return NoContent();
         }
 
+        [HttpGet("me", Name = "GetCurrentUser")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> Me(CancellationToken cancellationToken)
+        {
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(ClaimTypes.Name);
+            if (!Guid.TryParse(sub, out var userId)) return Unauthorized();
+
+            var user = await _user.GetByIdAsync(userId, cancellationToken);
+            if (user is null) return Unauthorized();
+
+            return Ok(MapToDto(user));
+        }
+
         private static UserDTO MapToDto(User user) => new UserDTO
         {
             Id = user.Id,
             Name = user.Name,
             Email = user.Email,
             Balance = user.Balance,
-            WishlistIds = user.Wishlist?.Select(image => image.Id).ToList() ?? new List<Guid>()
+            WishlistIds = user.Wishlist?.Select(image => image.Id).ToList() ?? new List<Guid>(),
+            Role = user.Role
         };
 
         private static User MapToEntity(UserDTO dto) => new User
@@ -86,7 +107,8 @@ namespace ImagesShop.API.Controllers
             Name = dto.Name,
             Email = dto.Email,
             Balance = dto.Balance,
-            PasswordHash = string.Empty
+            PasswordHash = string.Empty,
+            Role = dto.Role
         };
     }
 }

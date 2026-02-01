@@ -1,3 +1,4 @@
+using ImagesShop.Application.Helpers;
 using ImagesShop.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,6 +37,18 @@ namespace ImagesShop.Infrastructure.Data
                 var tagPortrait = new Tag { Id = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"), Name = "portrait" };
                 var tagAbstract = new Tag { Id = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"), Name = "abstract" };
                 var tagCity = new Tag { Id = Guid.Parse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"), Name = "city" };
+
+                var (adminHash, adminSalt) = PasswordHasher.HashPassword("Admin123!");
+                var userAdmin = new User
+                {
+                    Id = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeffffffff"),
+                    Name = "Admin",
+                    Email = "admin@example.com",
+                    PasswordHash = adminHash,
+                    PasswordSalt = adminSalt,
+                    Balance = 0m,
+                    Role = Domain.Enums.UserRole.Admin
+                };
 
                 var userAlice = new User
                 {
@@ -132,7 +145,7 @@ namespace ImagesShop.Infrastructure.Data
 
                 await context.Categories.AddRangeAsync(new[] { catNature, catAbstract, catPeople, catUrban }, cancellationToken);
                 await context.Tags.AddRangeAsync(new[] { tagSunset, tagMountain, tagPortrait, tagAbstract, tagCity }, cancellationToken);
-                await context.Users.AddRangeAsync(new[] { userAlice, userBob, userCarol }, cancellationToken);
+                await context.Users.AddRangeAsync(new[] { userAdmin, userAlice, userBob, userCarol }, cancellationToken);
                 await context.Images.AddRangeAsync(new[] { imgSunset, imgAbstract1, imgCity1, imgMountain, imgPortrait, imgAbstract2 }, cancellationToken);
 
                 var it1 = new ImageTag { ImageId = imgSunset.Id, TagId = tagSunset.Id };

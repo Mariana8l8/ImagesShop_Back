@@ -59,14 +59,31 @@ namespace ImagesShop.Application.Services
             return await IssueTokensAsync(user, cancellationToken);
         }
 
-        public async Task<AuthResponseDTO> RefreshAsync(RefreshRequestDTO request, CancellationToken cancellationToken = default)
+        public async Task<AuthResponseDTO> RefreshAsync(string refreshToken, CancellationToken cancellationToken = default)
         {
-            var stored = await _refreshTokens.GetByTokenAsync(request.RefreshToken, cancellationToken);
+            if (string.IsNullOrWhiteSpace(refreshToken)) throw new InvalidOperationException("Invalid refresh token");
+
+            var stored = await _refreshTokens.GetByTokenAsync(refreshToken, cancellationToken);
             if (stored is null || !stored.IsActive) throw new InvalidOperationException("Invalid refresh token");
 
+            var result = await IssueTokensAsync(stored.User, cancellationToken);
+
+            stored.RevokedAt = DateTime.UtcNow;
+            stored.ReplacedByToken = result.RefreshToken;
             await _refreshTokens.RevokeAsync(stored, cancellationToken);
 
-            return await IssueTokensAsync(stored.User, cancellationToken);
+            return result;
+        }
+
+        public async Task LogoutAsync(string refreshToken, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(refreshToken)) return;
+
+            var stored = await _refreshTokens.GetByTokenAsync(refreshToken, cancellationToken);
+            if (stored is null || stored.RevokedAt is not null) return;
+
+            stored.RevokedAt = DateTime.UtcNow;
+            await _refreshTokens.RevokeAsync(stored, cancellationToken);
         }
 
         private async Task<AuthResponseDTO> IssueTokensAsync(User user, CancellationToken cancellationToken)
