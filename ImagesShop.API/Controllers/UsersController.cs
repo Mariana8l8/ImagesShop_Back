@@ -91,6 +91,27 @@ namespace ImagesShop.API.Controllers
             return Ok(MapToDto(user));
         }
 
+        [HttpPost("topup", Name = "TopUpBalance")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> TopUp([FromBody] TopUpRequestDTO request, CancellationToken cancellationToken)
+        {
+            if (request is null || request.Amount <= 0) return BadRequest("Amount must be positive");
+
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(ClaimTypes.Name);
+            if (!Guid.TryParse(sub, out var userId)) return Unauthorized();
+
+            var user = await _user.GetByIdAsync(userId, cancellationToken);
+            if (user is null) return Unauthorized();
+
+            user.Balance += request.Amount;
+            await _user.UpdateAsync(user, cancellationToken);
+
+            return Ok(new { balance = user.Balance });
+        }
+
         private static UserDTO MapToDto(User user) => new UserDTO
         {
             Id = user.Id,
