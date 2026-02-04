@@ -16,6 +16,8 @@ namespace ImagesShop.Infrastructure.Data
         public DbSet<ImageTag> ImageTags { get; set; } = null!;
         public DbSet<PurchaseHistory> Purchases { get; set; } = null!;
         public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
+        public DbSet<CartItem> CartItems { get; set; } = null!;
+        public DbSet<UserTransaction> UserTransactions { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -85,6 +87,50 @@ namespace ImagesShop.Infrastructure.Data
             modelBuilder.Entity<RefreshToken>()
                 .HasIndex(refreshToken => refreshToken.Token)
                 .IsUnique();
+
+            modelBuilder.Entity<CartItem>(b =>
+            {
+                b.HasKey(ci => ci.Id);
+
+                b.HasOne(ci => ci.User)
+                    .WithMany(u => u.CartItems)
+                    .HasForeignKey(ci => ci.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasOne(ci => ci.Image)
+                    .WithMany()
+                    .HasForeignKey(ci => ci.ImageId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasIndex(ci => new { ci.UserId, ci.ImageId })
+                    .IsUnique();
+            });
+
+            modelBuilder.Entity<UserTransaction>(b =>
+            {
+                b.HasKey(t => t.Id);
+
+                b.HasOne(t => t.User)
+                    .WithMany(u => u.Transactions)
+                    .HasForeignKey(t => t.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasOne<Order>()
+                    .WithMany()
+                    .HasForeignKey(t => t.OrderId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                b.Property(t => t.Amount).HasPrecision(18, 2);
+                b.Property(t => t.BalanceBefore).HasPrecision(18, 2);
+                b.Property(t => t.BalanceAfter).HasPrecision(18, 2);
+
+                b.Property(t => t.CreatedAt)
+                    .HasDefaultValueSql("GETUTCDATE()");
+
+                b.HasIndex(t => t.UserId);
+                b.HasIndex(t => t.CreatedAt);
+                b.HasIndex(t => t.OrderId);
+            });
         }
     }
 }

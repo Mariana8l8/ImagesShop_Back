@@ -24,6 +24,10 @@ namespace ImagesShop.Domain.Entities
 
         public ICollection<Image> Wishlist { get; set; } = new List<Image>();
 
+        public ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
+
+        public ICollection<UserTransaction> Transactions { get; set; } = new List<UserTransaction>();
+
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     }
 }

@@ -16,6 +16,8 @@ namespace ImagesShop.Application.DependencyInjection
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<IOrderItemService, OrderItemService>();
             services.AddScoped<IPurchaseHistoryService, PurchaseHistoryService>();
+            services.AddScoped<ICartService, CartService>();
+            services.AddScoped<IUserTransactionService, UserTransactionService>();
 
             return services;
         }

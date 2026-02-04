@@ -26,6 +26,8 @@ namespace ImagesShop.Infrastructure.DependencyInjection
             services.AddScoped<IPurchaseHistoryRepository, PurchaseHistoryRepository>();
             services.AddScoped<ITagRepository, TagRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<ICartRepository, CartRepository>();
+            services.AddScoped<IUserTransactionRepository, UserTransactionRepository>();
 
             return services;
         }

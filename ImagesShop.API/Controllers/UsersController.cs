@@ -1,7 +1,9 @@
 ﻿using System.Security.Claims;
 using ImagesShop.Application.DTOs;
+using ImagesShop.Application.Interfaces.IRepositories;
 using ImagesShop.Application.Interfaces.IServices;
 using ImagesShop.Domain.Entities;
+using ImagesShop.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,10 +14,12 @@ namespace ImagesShop.API.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserService _user;
+        private readonly IUserTransactionRepository _transactions;
 
-        public UsersController(IUserService user)
+        public UsersController(IUserService user, IUserTransactionRepository transactions)
         {
             _user = user;
+            _transactions = transactions;
         }
 
         [HttpGet(Name = "GetAllUsers")]
@@ -106,8 +110,22 @@ namespace ImagesShop.API.Controllers
             var user = await _user.GetByIdAsync(userId, cancellationToken);
             if (user is null) return Unauthorized();
 
+            var before = user.Balance;
             user.Balance += request.Amount;
             await _user.UpdateAsync(user, cancellationToken);
+
+            await _transactions.AddAsync(new UserTransaction
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Type = UserTransactionType.TopUp,
+                Amount = request.Amount,
+                BalanceBefore = before,
+                BalanceAfter = user.Balance,
+                CreatedAt = DateTime.UtcNow,
+                OrderId = null,
+                Status = UserTransactionStatus.Success
+            }, cancellationToken);
 
             return Ok(new { balance = user.Balance });
         }
