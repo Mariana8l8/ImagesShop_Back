@@ -16,6 +16,10 @@ namespace ImagesShop.Domain.Entities
 
         public string PasswordSalt { get; set; } = string.Empty;
 
+        public bool EmailVerified { get; set; }
+
+        public DateTime? EmailVerifiedAt { get; set; }
+
         public decimal Balance { get; set; }
 
         public UserRole Role { get; set; } = UserRole.User;
@@ -29,5 +33,7 @@ namespace ImagesShop.Domain.Entities
         public ICollection<UserTransaction> Transactions { get; set; } = new List<UserTransaction>();
 
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+
+        public ICollection<EmailVerificationCode> EmailVerificationCodes { get; set; } = new List<EmailVerificationCode>();
     }
 }

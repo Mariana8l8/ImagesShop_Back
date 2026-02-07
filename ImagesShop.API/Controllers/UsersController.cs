@@ -130,6 +130,22 @@ namespace ImagesShop.API.Controllers
             return Ok(new { balance = user.Balance });
         }
 
+        [HttpPatch("me", Name = "UpdateMyName")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> UpdateMyName([FromBody] UpdateNameRequestDTO request, CancellationToken cancellationToken)
+        {
+            if (request is null || string.IsNullOrWhiteSpace(request.Name)) return BadRequest("Name is required");
+
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(ClaimTypes.Name);
+            if (!Guid.TryParse(sub, out var userId)) return Unauthorized();
+
+            await _user.UpdateNameAsync(userId, request.Name, cancellationToken);
+            return NoContent();
+        }
+
         private static UserDTO MapToDto(User user) => new UserDTO
         {
             Id = user.Id,

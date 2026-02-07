@@ -4,6 +4,7 @@ using ImagesShop.Application.Interfaces.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using System.Security.Claims;
 
 namespace ImagesShop.API.Controllers
 {
@@ -22,11 +23,27 @@ namespace ImagesShop.API.Controllers
 
         [HttpPost("register")]
         [AllowAnonymous]
-        public async Task<IActionResult> Register([FromBody] RegisterRequestDTO request, CancellationToken cancellationToken)
+        public async Task<IActionResult> Register([FromBody] RegisterStep1RequestDTO request, CancellationToken cancellationToken)
         {
             var result = await _auth.RegisterAsync(request, cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpPost("complete-registration")]
+        [AllowAnonymous]
+        public async Task<IActionResult> CompleteRegistration([FromBody] CompleteRegistrationRequestDTO request, CancellationToken cancellationToken)
+        {
+            var result = await _auth.CompleteRegistrationAsync(request, cancellationToken);
             AppendRefreshCookie(result.RefreshToken);
             return Ok(result);
+        }
+
+        [HttpPost("resend-verification-code")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResendVerificationCode([FromBody] ResendVerificationCodeRequestDTO request, CancellationToken cancellationToken)
+        {
+            await _auth.ResendVerificationCodeAsync(request, cancellationToken);
+            return NoContent();
         }
 
         [HttpPost("login")]
@@ -61,6 +78,17 @@ namespace ImagesShop.API.Controllers
                 Response.Cookies.Delete("refreshToken", BuildCookieOptions(DateTimeOffset.UtcNow.AddDays(-1)));
             }
 
+            return NoContent();
+        }
+
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDTO request, CancellationToken cancellationToken)
+        {
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(ClaimTypes.Name);
+            if (!Guid.TryParse(sub, out var userId)) return Unauthorized();
+
+            await _auth.ChangePasswordAsync(userId, request, cancellationToken);
             return NoContent();
         }
 

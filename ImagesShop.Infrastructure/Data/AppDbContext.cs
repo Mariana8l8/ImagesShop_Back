@@ -18,6 +18,8 @@ namespace ImagesShop.Infrastructure.Data
         public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
         public DbSet<CartItem> CartItems { get; set; } = null!;
         public DbSet<UserTransaction> UserTransactions { get; set; } = null!;
+        public DbSet<EmailVerificationCode> EmailVerificationCodes { get; set; } = null!;
+        public DbSet<PendingRegistration> PendingRegistrations { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -130,6 +132,37 @@ namespace ImagesShop.Infrastructure.Data
                 b.HasIndex(t => t.UserId);
                 b.HasIndex(t => t.CreatedAt);
                 b.HasIndex(t => t.OrderId);
+            });
+
+            modelBuilder.Entity<EmailVerificationCode>(b =>
+            {
+                b.HasKey(x => x.Id);
+
+                b.Property(x => x.Email).IsRequired();
+
+                b.HasOne(x => x.User)
+                    .WithMany(u => u.EmailVerificationCodes)
+                    .HasForeignKey(x => x.UserId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired(false);
+
+                b.Property(x => x.CodeHash).IsRequired();
+                b.Property(x => x.CodeSalt).IsRequired();
+
+                b.HasIndex(x => new { x.Email, x.CreatedAt });
+                b.HasIndex(x => new { x.UserId, x.CreatedAt });
+            });
+
+            modelBuilder.Entity<PendingRegistration>(b =>
+            {
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Email).IsRequired();
+                b.Property(x => x.Name).IsRequired();
+                b.Property(x => x.PasswordHash).IsRequired();
+                b.Property(x => x.PasswordSalt).IsRequired();
+
+                b.HasIndex(x => x.Email).IsUnique();
+                b.HasIndex(x => x.ExpiresAt);
             });
         }
     }

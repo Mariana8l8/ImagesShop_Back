@@ -1,7 +1,7 @@
-﻿using ImagesShop.Domain.Entities;
+﻿using ImagesShop.Application.Interfaces.IRepositories;
+using ImagesShop.Domain.Entities;
 using ImagesShop.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using ImagesShop.Application.Interfaces.IRepositories;
 
 namespace ImagesShop.Infrastructure.Repositories
 {
@@ -25,7 +25,6 @@ namespace ImagesShop.Infrastructure.Repositories
         {
             return await _database.Users
                 .Include(user => user.RefreshTokens)
-                .AsNoTracking()
                 .FirstOrDefaultAsync(user => user.Id == id, cancellationToken);
         }
 
@@ -44,7 +43,6 @@ namespace ImagesShop.Infrastructure.Repositories
 
         public async Task UpdateAsync(User user, CancellationToken cancellationToken = default)
         {
-            _database.Users.Update(user);
             await _database.SaveChangesAsync(cancellationToken);
         }
 

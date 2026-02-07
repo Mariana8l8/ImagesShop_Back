@@ -1,8 +1,10 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
+using ImagesShop.Application.Interfaces.IRepositories;
+using ImagesShop.Application.Interfaces.IServices;
 using ImagesShop.Infrastructure.Data;
 using ImagesShop.Infrastructure.Repositories;
-using ImagesShop.Application.Interfaces.IRepositories;
+using ImagesShop.Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ImagesShop.Infrastructure.DependencyInjection
 {
@@ -10,13 +12,12 @@ namespace ImagesShop.Infrastructure.DependencyInjection
     {
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, string? connectionString = null)
         {
-            if (!string.IsNullOrWhiteSpace(connectionString))
-            {
-                services.AddDbContext<AppDbContext>(options =>
-                    options.UseSqlServer(connectionString,
-                        b => b.MigrationsAssembly("ImagesShop.Infrastructure"))
-                );
-            }
+            if (string.IsNullOrWhiteSpace(connectionString))
+                throw new InvalidOperationException("DefaultConnection is missing or empty.");
+
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlServer(connectionString,
+                    b => b.MigrationsAssembly("ImagesShop.Infrastructure")));
 
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<ICategoryRepository, CategoryRepository>();
@@ -28,6 +29,10 @@ namespace ImagesShop.Infrastructure.DependencyInjection
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ICartRepository, CartRepository>();
             services.AddScoped<IUserTransactionRepository, UserTransactionRepository>();
+            services.AddScoped<IEmailVerificationCodeRepository, EmailVerificationCodeRepository>();
+            services.AddScoped<IPendingRegistrationRepository, PendingRegistrationRepository>();
+
+            services.AddScoped<IEmailSender, SmtpEmailSender>();
 
             return services;
         }

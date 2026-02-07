@@ -18,6 +18,8 @@ namespace ImagesShop.Infrastructure.Data
 
             try
             {
+                await context.Database.ExecuteSqlRawAsync("DELETE FROM [EmailVerificationCodes];", cancellationToken);
+                await context.Database.ExecuteSqlRawAsync("DELETE FROM [PendingRegistrations];", cancellationToken);
                 await context.Database.ExecuteSqlRawAsync("DELETE FROM [OrderItems];", cancellationToken);
                 await context.Database.ExecuteSqlRawAsync("DELETE FROM [ImageTags];", cancellationToken);
                 await context.Database.ExecuteSqlRawAsync("DELETE FROM [Purchases];", cancellationToken);
@@ -47,15 +49,19 @@ namespace ImagesShop.Infrastructure.Data
                     PasswordHash = adminHash,
                     PasswordSalt = adminSalt,
                     Balance = 0m,
+                    EmailVerified = true,
                     Role = Domain.Enums.UserRole.Admin
                 };
 
+                var (userHash, userSalt) = PasswordHasher.HashPassword("Admin123!");
                 var userAlice = new User
                 {
                     Id = Guid.Parse("99999999-9999-9999-9999-999999999999"),
                     Name = "Alice",
-                    Email = "alice@example.com",
-                    PasswordHash = "init_hash_alice",
+                    Email = "rrr@rrr.com",
+                    PasswordHash = userHash,
+                    PasswordSalt = userSalt,
+                    EmailVerified = true,
                     Balance = 100.00m
                 };
 
@@ -84,7 +90,7 @@ namespace ImagesShop.Infrastructure.Data
                     Description = "A beautiful golden sunset.",
                     Price = 9.99m,
                     WatermarkedUrl = "https://res.cloudinary.com/dw3wsidnm/image/upload/v1769780482/photo_2026-01-30_15-41-11_mm3s2a.jpg",
-                    OriginalUrl = "https://cdn.example.com/orig/golden-sunset.jpg",
+                    OriginalUrl = "https://res.cloudinary.com/dw3wsidnm/image/upload/v1769780482/photo_2026-01-30_15-41-11_mm3s2a.jpg",
                     CategoryId = catNature.Id
                 };
 
@@ -95,7 +101,7 @@ namespace ImagesShop.Infrastructure.Data
                     Description = "Abstract flowing colors.",
                     Price = 100.00m,
                     WatermarkedUrl = "https://res.cloudinary.com/dw3wsidnm/image/upload/v1769781584/photo_2_2026-01-30_15-59-03_elov5l.jpg",
-                    OriginalUrl = "https://cdn.example.com/orig/color-flow.jpg",
+                    OriginalUrl = "https://res.cloudinary.com/dw3wsidnm/image/upload/v1769781584/photo_2_2026-01-30_15-59-03_elov5l.jpg",
                     CategoryId = catAbstract.Id
                 };
 
@@ -105,8 +111,8 @@ namespace ImagesShop.Infrastructure.Data
                     Title = "Night City",
                     Description = "City lights at night.",
                     Price = 6.50m,
-                    WatermarkedUrl = "https://res.cloudinary.com/dw3wsidnm/image/upload/v1769781584/photo_1_2026-01-30_15-59-03_uwxvwn.jpg  ",
-                    OriginalUrl = "https://cdn.example.com/orig/night-city.jpg",
+                    WatermarkedUrl = "https://res.cloudinary.com/dw3wsidnm/image/upload/v1769781584/photo_1_2026-01-30_15-59-03_uwxvwn.jpg",
+                    OriginalUrl = "https://res.cloudinary.com/dw3wsidnm/image/upload/v1769781584/photo_1_2026-01-30_15-59-03_uwxvwn.jpg",
                     CategoryId = catUrban.Id
                 };
 
@@ -117,7 +123,7 @@ namespace ImagesShop.Infrastructure.Data
                     Description = "Mountain in the morning mist.",
                     Price = 8.50m,
                     WatermarkedUrl = "https://res.cloudinary.com/dw3wsidnm/image/upload/v1769781584/photo_6_2026-01-30_15-59-03_owr88v.jpg",
-                    OriginalUrl = "https://cdn.example.com/orig/misty-mountain.jpg",
+                    OriginalUrl = "https://res.cloudinary.com/dw3wsidnm/image/upload/v1769781584/photo_6_2026-01-30_15-59-03_owr88v.jpg",
                     CategoryId = catNature.Id
                 };
 
@@ -128,7 +134,7 @@ namespace ImagesShop.Infrastructure.Data
                     Description = "Warm human portrait.",
                     Price = 5.00m,
                     WatermarkedUrl = "https://res.cloudinary.com/dw3wsidnm/image/upload/v1769781584/photo_9_2026-01-30_15-59-03_eyadzp.jpg",
-                    OriginalUrl = "https://cdn.example.com/orig/portrait-smile.jpg",
+                    OriginalUrl = "https://res.cloudinary.com/dw3wsidnm/image/upload/v1769781584/photo_9_2026-01-30_15-59-03_eyadzp.jpg",
                     CategoryId = catPeople.Id
                 };
 
@@ -139,7 +145,7 @@ namespace ImagesShop.Infrastructure.Data
                     Description = "Geometric abstract art.",
                     Price = 6.75m,
                     WatermarkedUrl = "https://res.cloudinary.com/dw3wsidnm/image/upload/v1769781585/photo_11_2026-01-30_15-59-03_obpgtd.jpg",
-                    OriginalUrl = "https://cdn.example.com/orig/shapes-hues.jpg",
+                    OriginalUrl = "https://res.cloudinary.com/dw3wsidnm/image/upload/v1769781585/photo_11_2026-01-30_15-59-03_obpgtd.jpg",
                     CategoryId = catAbstract.Id
                 };
 

@@ -76,5 +76,17 @@ namespace ImagesShop.Application.Services
 
             await _repository.DeleteAsync(id, cancellationToken);
         }
+
+        public async Task UpdateNameAsync(Guid userId, string name, CancellationToken cancellationToken = default)
+        {
+            if (userId == Guid.Empty) throw new ArgumentException("Invalid id", nameof(userId));
+            if (string.IsNullOrWhiteSpace(name)) throw new InvalidOperationException("Name is required");
+
+            var existing = await _repository.GetByIdAsync(userId, cancellationToken);
+            if (existing is null) throw new InvalidOperationException("User not found");
+
+            existing.Name = name.Trim();
+            await _repository.UpdateAsync(existing, cancellationToken);
+        }
     }
 }

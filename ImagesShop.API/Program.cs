@@ -40,6 +40,8 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+builder.Services.Configure<EmailVerificationOptions>(builder.Configuration.GetSection("EmailVerification"));
+builder.Services.Configure<EmailSenderOptions>(builder.Configuration.GetSection("EmailSender"));
 
 builder.Services.AddAuthentication(options =>
 {
@@ -115,4 +117,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+var cs = builder.Configuration.GetConnectionString("DefaultConnection");
+Console.WriteLine($"CS: {cs}");
 
