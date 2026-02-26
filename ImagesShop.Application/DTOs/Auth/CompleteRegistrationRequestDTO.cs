@@ -1,15 +1,26 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace ImagesShop.Application.DTOs.Auth
 {
     public class CompleteRegistrationRequestDTO
     {
+        [Required]
+        [EmailAddress]
         public string Email { get; set; } = string.Empty;
 
+        [Required]
         public string Code { get; set; } = string.Empty;
 
+        [Required]
+        [StringLength(100, MinimumLength = 6)]
         public string Password { get; set; } = string.Empty;
 
+        [Required]
+        [Compare(nameof(Password))]
         public string ConfirmPassword { get; set; } = string.Empty;
 
+        [Required]
+        [StringLength(100, MinimumLength = 2)]
         public string Name { get; set; } = string.Empty;
     }
 }

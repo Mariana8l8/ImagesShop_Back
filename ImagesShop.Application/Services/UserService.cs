@@ -7,28 +7,38 @@ namespace ImagesShop.Application.Services
 {
     public class UserService : IUserService
     {
-        private readonly IUserRepository _repository;
+        private readonly IUserRepository _userRepository;
+        private readonly IUserTransactionRepository _userTransactionRepository;
 
-        public UserService(IUserRepository repository)
+        public UserService(IUserRepository userRepository, IUserTransactionRepository userTransactionRepository)
         {
-            _repository = repository;
+            _userRepository = userRepository;
+            _userTransactionRepository = userTransactionRepository;
         }
 
         public async Task<IEnumerable<User>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            return await _repository.GetAllAsync(cancellationToken);
+            return await _userRepository.GetAllAsync(cancellationToken);
         }
 
         public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            if (id == Guid.Empty) return null;
-            return await _repository.GetByIdAsync(id, cancellationToken);
+            if (id == Guid.Empty) 
+            {
+                return null;
+            }
+            
+            return await _userRepository.GetByIdAsync(id, cancellationToken);
         }
 
         public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(email)) return null;
-            return await _repository.GetByEmailAsync(email, cancellationToken);
+            if (string.IsNullOrWhiteSpace(email)) 
+            {
+                return null;
+            }
+            
+            return await _userRepository.GetByEmailAsync(email, cancellationToken);
         }
 
         public async Task<User> CreateAsync(User user, CancellationToken cancellationToken = default)
@@ -36,7 +46,9 @@ namespace ImagesShop.Application.Services
             if (user is null) throw new ArgumentNullException(nameof(user));
 
             if (user.Id == Guid.Empty)
+            {
                 user.Id = Guid.NewGuid();
+            }
 
             user.Email ??= string.Empty;
             user.Name ??= string.Empty;
@@ -48,45 +60,86 @@ namespace ImagesShop.Application.Services
             user.Orders ??= new List<Order>();
             user.RefreshTokens ??= new List<RefreshToken>();
 
-            await _repository.AddAsync(user, cancellationToken);
+            await _userRepository.AddAsync(user, cancellationToken);
+            
             return user;
         }
 
         public async Task UpdateAsync(User user, CancellationToken cancellationToken = default)
         {
             if (user is null) throw new ArgumentNullException(nameof(user));
-            if (user.Id == Guid.Empty) throw new ArgumentException("User must have an Id", nameof(user));
+            if (user.Id == Guid.Empty) throw new ArgumentException("The user must have a valid identifier.", nameof(user));
 
-            var existing = await _repository.GetByIdAsync(user.Id, cancellationToken);
-            if (existing is null) throw new InvalidOperationException("User not found");
+            var existingUser = await _userRepository.GetByIdAsync(user.Id, cancellationToken);
+            if (existingUser is null) 
+            {
+                throw new InvalidOperationException("The user to update was not found.");
+            }
 
-            existing.Name = user.Name ?? existing.Name;
-            existing.Email = user.Email ?? existing.Email;
-            existing.PasswordHash = string.IsNullOrWhiteSpace(user.PasswordHash) ? existing.PasswordHash : user.PasswordHash;
-            existing.PasswordSalt = string.IsNullOrWhiteSpace(user.PasswordSalt) ? existing.PasswordSalt : user.PasswordSalt;
-            existing.Balance = user.Balance;
-            existing.Role = user.Role;
+            existingUser.Name = user.Name ?? existingUser.Name;
+            existingUser.Email = user.Email ?? existingUser.Email;
+            existingUser.PasswordHash = string.IsNullOrWhiteSpace(user.PasswordHash) ? existingUser.PasswordHash : user.PasswordHash;
+            existingUser.PasswordSalt = string.IsNullOrWhiteSpace(user.PasswordSalt) ? existingUser.PasswordSalt : user.PasswordSalt;
+            existingUser.Balance = user.Balance;
+            existingUser.Role = user.Role;
 
-            await _repository.UpdateAsync(existing, cancellationToken);
+            await _userRepository.UpdateAsync(existingUser, cancellationToken);
         }
 
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            if (id == Guid.Empty) throw new ArgumentException("Invalid id", nameof(id));
+            if (id == Guid.Empty) throw new ArgumentException("The user identifier cannot be empty.", nameof(id));
 
-            await _repository.DeleteAsync(id, cancellationToken);
+            await _userRepository.DeleteAsync(id, cancellationToken);
         }
 
         public async Task UpdateNameAsync(Guid userId, string name, CancellationToken cancellationToken = default)
         {
-            if (userId == Guid.Empty) throw new ArgumentException("Invalid id", nameof(userId));
-            if (string.IsNullOrWhiteSpace(name)) throw new InvalidOperationException("Name is required");
+            if (userId == Guid.Empty) throw new ArgumentException("Invalid user identifier.", nameof(userId));
+            if (string.IsNullOrWhiteSpace(name)) throw new InvalidOperationException("The user name is required.");
 
-            var existing = await _repository.GetByIdAsync(userId, cancellationToken);
-            if (existing is null) throw new InvalidOperationException("User not found");
+            var existingUser = await _userRepository.GetByIdAsync(userId, cancellationToken);
+            if (existingUser is null) 
+            {
+                throw new InvalidOperationException("The user was not found.");
+            }
 
-            existing.Name = name.Trim();
-            await _repository.UpdateAsync(existing, cancellationToken);
+            existingUser.Name = name.Trim();
+            await _userRepository.UpdateAsync(existingUser, cancellationToken);
+        }
+
+        public async Task<decimal> TopUpAsync(Guid userId, decimal amount, CancellationToken cancellationToken = default)
+        {
+            if (userId == Guid.Empty) throw new ArgumentException("Invalid user identifier.", nameof(userId));
+            if (amount <= 0) throw new InvalidOperationException("The top-up amount must be positive.");
+
+            var userEntity = await _userRepository.GetByIdAsync(userId, cancellationToken);
+            if (userEntity is null) 
+            {
+                throw new InvalidOperationException("The user was not found.");
+            }
+
+            var balanceBeforeUpdate = userEntity.Balance;
+            userEntity.Balance += amount;
+            
+            await _userRepository.UpdateAsync(userEntity, cancellationToken);
+
+            var topUpTransaction = new UserTransaction
+            {
+                Id = Guid.NewGuid(),
+                UserId = userEntity.Id,
+                Type = UserTransactionType.TopUp,
+                Amount = amount,
+                BalanceBefore = balanceBeforeUpdate,
+                BalanceAfter = userEntity.Balance,
+                CreatedAt = DateTime.UtcNow,
+                OrderId = null,
+                Status = UserTransactionStatus.Success
+            };
+
+            await _userTransactionRepository.AddAsync(topUpTransaction, cancellationToken);
+
+            return userEntity.Balance;
         }
     }
 }

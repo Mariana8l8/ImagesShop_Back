@@ -1,4 +1,5 @@
-﻿using ImagesShop.Domain.Entities;
+﻿using ImagesShop.Application.DTOs;
+using ImagesShop.Domain.Entities;
 
 namespace ImagesShop.Application.Interfaces.IServices
 {
@@ -9,5 +10,6 @@ namespace ImagesShop.Application.Interfaces.IServices
         Task<Order> CreateAsync(Order order, CancellationToken cancellationToken = default);
         Task UpdateAsync(Order order, CancellationToken cancellationToken = default);
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<PurchaseResultDTO> PurchaseImageAsync(Guid userId, Guid imageId, CancellationToken cancellationToken = default);
     }
 }

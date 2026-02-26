@@ -6,22 +6,26 @@ namespace ImagesShop.Application.Services
 {
     public class CategoryService : ICategoryService
     {
-        private readonly ICategoryRepository _repository;
+        private readonly ICategoryRepository _categoryRepository;
 
-        public CategoryService(ICategoryRepository repository)
+        public CategoryService(ICategoryRepository categoryRepository)
         {
-            _repository = repository;
+            _categoryRepository = categoryRepository;
         }
 
         public async Task<IEnumerable<Category>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            return await _repository.GetAllAsync(cancellationToken);
+            return await _categoryRepository.GetAllAsync(cancellationToken);
         }
 
         public async Task<Category?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            if (id == Guid.Empty) return null;
-            return await _repository.GetByIdAsync(id, cancellationToken);
+            if (id == Guid.Empty) 
+            {
+                return null;
+            }
+            
+            return await _categoryRepository.GetByIdAsync(id, cancellationToken);
         }
 
         public async Task<Category> CreateAsync(Category category, CancellationToken cancellationToken = default)
@@ -29,32 +33,38 @@ namespace ImagesShop.Application.Services
             if (category is null) throw new ArgumentNullException(nameof(category));
 
             if (category.Id == Guid.Empty)
+            {
                 category.Id = Guid.NewGuid();
+            }
 
             category.Name ??= string.Empty;
 
-            await _repository.AddAsync(category, cancellationToken);
+            await _categoryRepository.AddAsync(category, cancellationToken);
+            
             return category;
         }
 
         public async Task UpdateAsync(Category category, CancellationToken cancellationToken = default)
         {
             if (category is null) throw new ArgumentNullException(nameof(category));
-            if (category.Id == Guid.Empty) throw new ArgumentException("Category must have an Id", nameof(category));
+            if (category.Id == Guid.Empty) throw new ArgumentException("The category instance must have a valid identifier.", nameof(category));
 
-            var existing = await _repository.GetByIdAsync(category.Id, cancellationToken);
-            if (existing is null) throw new InvalidOperationException("Category not found");
+            var existingCategory = await _categoryRepository.GetByIdAsync(category.Id, cancellationToken);
+            if (existingCategory is null) 
+            {
+                throw new InvalidOperationException("The category to update was not found.");
+            }
 
-            existing.Name = category.Name ?? existing.Name;
+            existingCategory.Name = category.Name ?? existingCategory.Name;
 
-            await _repository.UpdateAsync(existing, cancellationToken);
+            await _categoryRepository.UpdateAsync(existingCategory, cancellationToken);
         }
 
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            if (id == Guid.Empty) throw new ArgumentException("Invalid id", nameof(id));
+            if (id == Guid.Empty) throw new ArgumentException("The category identifier cannot be empty.", nameof(id));
 
-            await _repository.DeleteAsync(id, cancellationToken);
+            await _categoryRepository.DeleteAsync(id, cancellationToken);
         }
     }
 }

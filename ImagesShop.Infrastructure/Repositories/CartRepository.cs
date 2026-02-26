@@ -7,42 +7,44 @@ namespace ImagesShop.Infrastructure.Repositories
 {
     public class CartRepository : ICartRepository
     {
-        private readonly AppDbContext _db;
+        private readonly AppDbContext _appDbContext;
 
-        public CartRepository(AppDbContext db)
+        public CartRepository(AppDbContext appDbContext)
         {
-            _db = db;
+            _appDbContext = appDbContext;
         }
 
         public async Task<IEnumerable<CartItem>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            return await _db.CartItems
+            return await _appDbContext.CartItems
                 .AsNoTracking()
-                .Include(ci => ci.Image)
-                .Where(ci => ci.UserId == userId)
+                .Include(cartItem => cartItem.Image)
+                .Where(cartItem => cartItem.UserId == userId)
                 .ToListAsync(cancellationToken);
         }
 
         public Task<CartItem?> GetItemAsync(Guid userId, Guid imageId, CancellationToken cancellationToken = default)
         {
-            return _db.CartItems.FirstOrDefaultAsync(ci => ci.UserId == userId && ci.ImageId == imageId, cancellationToken);
+            return _appDbContext.CartItems.FirstOrDefaultAsync(cartItem => cartItem.UserId == userId && cartItem.ImageId == imageId, cancellationToken);
         }
 
-        public async Task AddAsync(CartItem item, CancellationToken cancellationToken = default)
+        public async Task AddAsync(CartItem cartItem, CancellationToken cancellationToken = default)
         {
-            await _db.CartItems.AddAsync(item, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
+            await _appDbContext.CartItems.AddAsync(cartItem, cancellationToken);
+            await _appDbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task RemoveAsync(CartItem item, CancellationToken cancellationToken = default)
+        public async Task RemoveAsync(CartItem cartItem, CancellationToken cancellationToken = default)
         {
-            _db.CartItems.Remove(item);
-            await _db.SaveChangesAsync(cancellationToken);
+            _appDbContext.CartItems.Remove(cartItem);
+            await _appDbContext.SaveChangesAsync(cancellationToken);
         }
 
         public async Task ClearAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            await _db.CartItems.Where(ci => ci.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+            await _appDbContext.CartItems
+                .Where(cartItem => cartItem.UserId == userId)
+                .ExecuteDeleteAsync(cancellationToken);
         }
     }
 }

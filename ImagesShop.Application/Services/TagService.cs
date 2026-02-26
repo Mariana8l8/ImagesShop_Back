@@ -6,22 +6,26 @@ namespace ImagesShop.Application.Services
 {
     public class TagService : ITagService
     {
-        private readonly ITagRepository _repository;
+        private readonly ITagRepository _tagRepository;
 
-        public TagService(ITagRepository repository)
+        public TagService(ITagRepository tagRepository)
         {
-            _repository = repository;
+            _tagRepository = tagRepository;
         }
 
         public async Task<IEnumerable<Tag>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            return await _repository.GetAllAsync(cancellationToken);
+            return await _tagRepository.GetAllAsync(cancellationToken);
         }
 
         public async Task<Tag?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            if (id == Guid.Empty) return null;
-            return await _repository.GetByIdAsync(id, cancellationToken);
+            if (id == Guid.Empty) 
+            {
+                return null;
+            }
+            
+            return await _tagRepository.GetByIdAsync(id, cancellationToken);
         }
 
         public async Task<Tag> CreateAsync(Tag tag, CancellationToken cancellationToken = default)
@@ -29,32 +33,38 @@ namespace ImagesShop.Application.Services
             if (tag is null) throw new ArgumentNullException(nameof(tag));
 
             if (tag.Id == Guid.Empty)
+            {
                 tag.Id = Guid.NewGuid();
+            }
 
             tag.Name ??= string.Empty;
 
-            await _repository.AddAsync(tag, cancellationToken);
+            await _tagRepository.AddAsync(tag, cancellationToken);
+            
             return tag;
         }
 
         public async Task UpdateAsync(Tag tag, CancellationToken cancellationToken = default)
         {
             if (tag is null) throw new ArgumentNullException(nameof(tag));
-            if (tag.Id == Guid.Empty) throw new ArgumentException("Tag must have an Id", nameof(tag));
+            if (tag.Id == Guid.Empty) throw new ArgumentException("The tag instance must have a valid identifier.", nameof(tag));
 
-            var existing = await _repository.GetByIdAsync(tag.Id, cancellationToken);
-            if (existing is null) throw new InvalidOperationException("Tag not found");
+            var existingTag = await _tagRepository.GetByIdAsync(tag.Id, cancellationToken);
+            if (existingTag is null) 
+            {
+                throw new InvalidOperationException("The tag to update was not found.");
+            }
 
-            existing.Name = tag.Name ?? existing.Name;
+            existingTag.Name = tag.Name ?? existingTag.Name;
 
-            await _repository.UpdateAsync(existing, cancellationToken);
+            await _tagRepository.UpdateAsync(existingTag, cancellationToken);
         }
 
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            if (id == Guid.Empty) throw new ArgumentException("Invalid id", nameof(id));
+            if (id == Guid.Empty) throw new ArgumentException("The tag identifier cannot be empty.", nameof(id));
 
-            await _repository.DeleteAsync(id, cancellationToken);
+            await _tagRepository.DeleteAsync(id, cancellationToken);
         }
     }
 }

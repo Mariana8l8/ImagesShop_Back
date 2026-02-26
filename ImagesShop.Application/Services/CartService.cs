@@ -6,50 +6,66 @@ namespace ImagesShop.Application.Services
 {
     public class CartService : ICartService
     {
-        private readonly ICartRepository _cart;
+        private readonly ICartRepository _cartRepository;
 
-        public CartService(ICartRepository cart)
+        public CartService(ICartRepository cartRepository)
         {
-            _cart = cart;
+            _cartRepository = cartRepository;
         }
 
         public Task<IEnumerable<CartItem>> GetMyCartAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            if (userId == Guid.Empty) return Task.FromResult<IEnumerable<CartItem>>(Array.Empty<CartItem>());
-            return _cart.GetByUserIdAsync(userId, cancellationToken);
+            if (userId == Guid.Empty) 
+            {
+                return Task.FromResult<IEnumerable<CartItem>>(Array.Empty<CartItem>());
+            }
+            
+            return _cartRepository.GetByUserIdAsync(userId, cancellationToken);
         }
 
         public async Task AddAsync(Guid userId, Guid imageId, CancellationToken cancellationToken = default)
         {
-            if (userId == Guid.Empty) throw new ArgumentException("Invalid userId", nameof(userId));
-            if (imageId == Guid.Empty) throw new ArgumentException("Invalid imageId", nameof(imageId));
+            if (userId == Guid.Empty) throw new ArgumentException("User identifier cannot be empty.", nameof(userId));
+            if (imageId == Guid.Empty) throw new ArgumentException("Image identifier cannot be empty.", nameof(imageId));
 
-            var existing = await _cart.GetItemAsync(userId, imageId, cancellationToken);
-            if (existing is not null) return;
+            var existingCartItem = await _cartRepository.GetItemAsync(userId, imageId, cancellationToken);
+            if (existingCartItem is not null) 
+            {
+                return;
+            }
 
-            await _cart.AddAsync(new CartItem
+            var newCartItem = new CartItem
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 ImageId = imageId
-            }, cancellationToken);
+            };
+
+            await _cartRepository.AddAsync(newCartItem, cancellationToken);
         }
 
         public async Task RemoveAsync(Guid userId, Guid imageId, CancellationToken cancellationToken = default)
         {
-            if (userId == Guid.Empty) throw new ArgumentException("Invalid userId", nameof(userId));
-            if (imageId == Guid.Empty) throw new ArgumentException("Invalid imageId", nameof(imageId));
+            if (userId == Guid.Empty) throw new ArgumentException("User identifier cannot be empty.", nameof(userId));
+            if (imageId == Guid.Empty) throw new ArgumentException("Image identifier cannot be empty.", nameof(imageId));
 
-            var existing = await _cart.GetItemAsync(userId, imageId, cancellationToken);
-            if (existing is null) return;
+            var existingCartItem = await _cartRepository.GetItemAsync(userId, imageId, cancellationToken);
+            if (existingCartItem is null) 
+            {
+                return;
+            }
 
-            await _cart.RemoveAsync(existing, cancellationToken);
+            await _cartRepository.RemoveAsync(existingCartItem, cancellationToken);
         }
 
         public Task ClearAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            if (userId == Guid.Empty) return Task.CompletedTask;
-            return _cart.ClearAsync(userId, cancellationToken);
+            if (userId == Guid.Empty) 
+            {
+                return Task.CompletedTask;
+            }
+            
+            return _cartRepository.ClearAsync(userId, cancellationToken);
         }
     }
 }

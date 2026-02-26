@@ -12,67 +12,76 @@ namespace ImagesShop.API.Controllers
     [Authorize]
     public class CartController : ControllerBase
     {
-        private readonly ICartService _cart;
+        private readonly ICartService _cartService;
 
-        public CartController(ICartService cart)
+        public CartController(ICartService cartService)
         {
-            _cart = cart;
+            _cartService = cartService;
         }
 
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetMyCart(CancellationToken cancellationToken)
         {
-            var userId = GetUserId();
-            if (userId is null) return Unauthorized();
+            var userId = GetUserIdOrThrow();
 
-            var items = await _cart.GetMyCartAsync(userId.Value, cancellationToken);
-            return Ok(items.Select(MapToDto));
+            var cartItems = await _cartService.GetMyCartAsync(userId, cancellationToken);
+            var cartItemsDto = cartItems.Select(cartItem => MapToDto(cartItem));
+            
+            return Ok(cartItemsDto);
         }
 
         [HttpPost("items")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Add([FromBody] AddToCartRequestDTO request, CancellationToken cancellationToken)
         {
-            if (request is null || request.ImageId == Guid.Empty) return BadRequest();
+            var userId = GetUserIdOrThrow();
 
-            var userId = GetUserId();
-            if (userId is null) return Unauthorized();
-
-            await _cart.AddAsync(userId.Value, request.ImageId, cancellationToken);
+            await _cartService.AddAsync(userId, request.ImageId, cancellationToken);
+            
             return NoContent();
         }
 
         [HttpDelete("items/{imageId:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Remove(Guid imageId, CancellationToken cancellationToken)
         {
-            var userId = GetUserId();
-            if (userId is null) return Unauthorized();
+            var userId = GetUserIdOrThrow();
 
-            await _cart.RemoveAsync(userId.Value, imageId, cancellationToken);
+            await _cartService.RemoveAsync(userId, imageId, cancellationToken);
+            
             return NoContent();
         }
 
         [HttpDelete]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Clear(CancellationToken cancellationToken)
         {
-            var userId = GetUserId();
-            if (userId is null) return Unauthorized();
+            var userId = GetUserIdOrThrow();
 
-            await _cart.ClearAsync(userId.Value, cancellationToken);
+            await _cartService.ClearAsync(userId, cancellationToken);
+            
             return NoContent();
         }
 
-        private static CartItemDTO MapToDto(CartItem item) => new()
+        private static CartItemDTO MapToDto(CartItem cartItem) => new()
         {
-            ImageId = item.ImageId,
-            Title = item.Image.Title,
-            Price = item.Image.Price,
-            WatermarkedUrl = item.Image.WatermarkedUrl
+            ImageId = cartItem.ImageId,
+            Title = cartItem.Image.Title,
+            Price = cartItem.Image.Price,
+            WatermarkedUrl = cartItem.Image.WatermarkedUrl
         };
 
-        private Guid? GetUserId()
+        private Guid GetUserIdOrThrow()
         {
-            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(ClaimTypes.Name);
-            return Guid.TryParse(sub, out var id) ? id : null;
+            var nameIdentifier = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(ClaimTypes.Name);
+            
+            if (!Guid.TryParse(nameIdentifier, out var userId)) 
+            {
+                throw new UnauthorizedAccessException();
+            }
+            
+            return userId;
         }
     }
 }

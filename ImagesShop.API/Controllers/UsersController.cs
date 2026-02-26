@@ -1,82 +1,85 @@
 ﻿using System.Security.Claims;
 using ImagesShop.Application.DTOs;
-using ImagesShop.Application.Interfaces.IRepositories;
 using ImagesShop.Application.Interfaces.IServices;
 using ImagesShop.Domain.Entities;
-using ImagesShop.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ImagesShop.API.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class UsersController : ControllerBase
     {
-        private readonly IUserService _user;
-        private readonly IUserTransactionRepository _transactions;
+        private readonly IUserService _userService;
 
-        public UsersController(IUserService user, IUserTransactionRepository transactions)
+        public UsersController(IUserService userService)
         {
-            _user = user;
-            _transactions = transactions;
+            _userService = userService;
         }
 
         [HttpGet(Name = "GetAllUsers")]
         [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
-            var list = await _user.GetAllAsync(cancellationToken);
-            var dto = list.Select(MapToDto);
-            return Ok(dto);
+            var users = await _userService.GetAllAsync(cancellationToken);
+            var usersDto = users.Select(user => MapToDto(user));
+            
+            return Ok(usersDto);
         }
 
         [HttpGet("{id:guid}", Name = "GetUserById")]
         [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
         {
-            var user = await _user.GetByIdAsync(id, cancellationToken);
-            return user is null ? NotFound() : Ok(MapToDto(user));
+            var user = await _userService.GetByIdAsync(id, cancellationToken);
+            
+            if (user is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(MapToDto(user));
         }
 
         [HttpPost(Name = "AddUser")]
         [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Create([FromBody] UserDTO dto, CancellationToken cancellationToken)
+        public async Task<IActionResult> Create([FromBody] UserDTO userDto, CancellationToken cancellationToken)
         {
-            var entity = MapToEntity(dto);
-            var created = await _user.CreateAsync(entity, cancellationToken);
-            return CreatedAtAction(nameof(Get), new { id = created.Id }, MapToDto(created));
+            var userEntity = MapToEntity(userDto);
+            var createdUser = await _userService.CreateAsync(userEntity, cancellationToken);
+            
+            return CreatedAtAction(nameof(Get), new { id = createdUser.Id }, MapToDto(createdUser));
         }
 
         [HttpPut("{id:guid}", Name = "ChangeUserById")]
         [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Update(Guid id, [FromBody] UserDTO dto, CancellationToken cancellationToken)
+        public async Task<IActionResult> Update(Guid id, [FromBody] UserDTO userDto, CancellationToken cancellationToken)
         {
-            if (id != dto.Id) return BadRequest();
-            var entity = MapToEntity(dto);
-            await _user.UpdateAsync(entity, cancellationToken);
+            if (id != userDto.Id)
+            {
+                return BadRequest("User ID mismatch.");
+            }
+
+            var userEntity = MapToEntity(userDto);
+            await _userService.UpdateAsync(userEntity, cancellationToken);
+            
             return NoContent();
         }
 
         [HttpDelete("{id:guid}", Name = "DeleteUserById")]
         [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
         {
-            await _user.DeleteAsync(id, cancellationToken);
+            await _userService.DeleteAsync(id, cancellationToken);
+            
             return NoContent();
         }
 
@@ -86,11 +89,13 @@ namespace ImagesShop.API.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Me(CancellationToken cancellationToken)
         {
-            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(ClaimTypes.Name);
-            if (!Guid.TryParse(sub, out var userId)) return Unauthorized();
-
-            var user = await _user.GetByIdAsync(userId, cancellationToken);
-            if (user is null) return Unauthorized();
+            var userId = GetUserIdOrThrow();
+            var user = await _userService.GetByIdAsync(userId, cancellationToken);
+            
+            if (user is null)
+            {
+                return Unauthorized();
+            }
 
             return Ok(MapToDto(user));
         }
@@ -98,51 +103,24 @@ namespace ImagesShop.API.Controllers
         [HttpPost("topup", Name = "TopUpBalance")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> TopUp([FromBody] TopUpRequestDTO request, CancellationToken cancellationToken)
         {
-            if (request is null || request.Amount <= 0) return BadRequest("Amount must be positive");
-
-            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(ClaimTypes.Name);
-            if (!Guid.TryParse(sub, out var userId)) return Unauthorized();
-
-            var user = await _user.GetByIdAsync(userId, cancellationToken);
-            if (user is null) return Unauthorized();
-
-            var before = user.Balance;
-            user.Balance += request.Amount;
-            await _user.UpdateAsync(user, cancellationToken);
-
-            await _transactions.AddAsync(new UserTransaction
-            {
-                Id = Guid.NewGuid(),
-                UserId = user.Id,
-                Type = UserTransactionType.TopUp,
-                Amount = request.Amount,
-                BalanceBefore = before,
-                BalanceAfter = user.Balance,
-                CreatedAt = DateTime.UtcNow,
-                OrderId = null,
-                Status = UserTransactionStatus.Success
-            }, cancellationToken);
-
-            return Ok(new { balance = user.Balance });
+            var userId = GetUserIdOrThrow();
+            var newBalance = await _userService.TopUpAsync(userId, request.Amount, cancellationToken);
+            
+            return Ok(new { balance = newBalance });
         }
 
         [HttpPatch("me", Name = "UpdateMyName")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> UpdateMyName([FromBody] UpdateNameRequestDTO request, CancellationToken cancellationToken)
         {
-            if (request is null || string.IsNullOrWhiteSpace(request.Name)) return BadRequest("Name is required");
-
-            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(ClaimTypes.Name);
-            if (!Guid.TryParse(sub, out var userId)) return Unauthorized();
-
-            await _user.UpdateNameAsync(userId, request.Name, cancellationToken);
+            var userId = GetUserIdOrThrow();
+            await _userService.UpdateNameAsync(userId, request.Name, cancellationToken);
+            
             return NoContent();
         }
 
@@ -156,14 +134,26 @@ namespace ImagesShop.API.Controllers
             Role = user.Role
         };
 
-        private static User MapToEntity(UserDTO dto) => new User
+        private static User MapToEntity(UserDTO userDto) => new User
         {
-            Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id,
-            Name = dto.Name,
-            Email = dto.Email,
-            Balance = dto.Balance,
+            Id = userDto.Id == Guid.Empty ? Guid.NewGuid() : userDto.Id,
+            Name = userDto.Name,
+            Email = userDto.Email,
+            Balance = userDto.Balance,
             PasswordHash = string.Empty,
-            Role = dto.Role
+            Role = userDto.Role
         };
+
+        private Guid GetUserIdOrThrow()
+        {
+            var nameIdentifier = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(ClaimTypes.Name);
+            
+            if (!Guid.TryParse(nameIdentifier, out var userId)) 
+            {
+                throw new UnauthorizedAccessException();
+            }
+            
+            return userId;
+        }
     }
 }

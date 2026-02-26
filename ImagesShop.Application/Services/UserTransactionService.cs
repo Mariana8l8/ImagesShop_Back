@@ -6,17 +6,21 @@ namespace ImagesShop.Application.Services
 {
     public class UserTransactionService : IUserTransactionService
     {
-        private readonly IUserTransactionRepository _transactions;
+        private readonly IUserTransactionRepository _userTransactionRepository;
 
-        public UserTransactionService(IUserTransactionRepository transactions)
+        public UserTransactionService(IUserTransactionRepository userTransactionRepository)
         {
-            _transactions = transactions;
+            _userTransactionRepository = userTransactionRepository;
         }
 
         public Task<IEnumerable<UserTransaction>> GetMyAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            if (userId == Guid.Empty) return Task.FromResult<IEnumerable<UserTransaction>>(Array.Empty<UserTransaction>());
-            return _transactions.GetByUserIdAsync(userId, cancellationToken);
+            if (userId == Guid.Empty) 
+            {
+                return Task.FromResult<IEnumerable<UserTransaction>>(Array.Empty<UserTransaction>());
+            }
+            
+            return _userTransactionRepository.GetByUserIdAsync(userId, cancellationToken);
         }
     }
 }

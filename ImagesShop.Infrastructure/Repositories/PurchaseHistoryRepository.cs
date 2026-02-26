@@ -7,46 +7,47 @@ namespace ImagesShop.Infrastructure.Repositories
 {
     public class PurchaseHistoryRepository : IPurchaseHistoryRepository
     {
-        private readonly AppDbContext _database;
+        private readonly AppDbContext _appDbContext;
 
-        public PurchaseHistoryRepository(AppDbContext database)
+        public PurchaseHistoryRepository(AppDbContext appDbContext)
         {
-            _database = database;
+            _appDbContext = appDbContext;
         }
 
         public async Task<IEnumerable<PurchaseHistory>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            return await _database.Purchases
+            return await _appDbContext.Purchases
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
         }
 
         public async Task<PurchaseHistory?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await _database.Purchases
+            return await _appDbContext.Purchases
                 .AsNoTracking()
                 .FirstOrDefaultAsync(purchaseHistory => purchaseHistory.Id == id, cancellationToken);
         }
 
         public async Task AddAsync(PurchaseHistory purchaseHistory, CancellationToken cancellationToken = default)
         {
-            await _database.Purchases.AddAsync(purchaseHistory, cancellationToken);
-            await _database.SaveChangesAsync(cancellationToken);
+            await _appDbContext.Purchases.AddAsync(purchaseHistory, cancellationToken);
+            await _appDbContext.SaveChangesAsync(cancellationToken);
         }
 
         public async Task UpdateAsync(PurchaseHistory purchaseHistory, CancellationToken cancellationToken = default)
         {
-            _database.Purchases.Update(purchaseHistory);
-            await _database.SaveChangesAsync(cancellationToken);
+            _appDbContext.Purchases.Update(purchaseHistory);
+            await _appDbContext.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            var entity = await _database.Purchases.FindAsync(new object[] { id }, cancellationToken);
-            if (entity is not null)
+            var purchaseHistoryEntity = await _appDbContext.Purchases.FindAsync(new object[] { id }, cancellationToken);
+            
+            if (purchaseHistoryEntity is not null)
             {
-                _database.Purchases.Remove(entity);
-                await _database.SaveChangesAsync(cancellationToken);
+                _appDbContext.Purchases.Remove(purchaseHistoryEntity);
+                await _appDbContext.SaveChangesAsync(cancellationToken);
             }
         }
     }

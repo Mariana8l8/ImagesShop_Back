@@ -7,46 +7,47 @@ namespace ImagesShop.Infrastructure.Repositories
 {
     public class TagRepository : ITagRepository
     {
-        private readonly AppDbContext _database;
+        private readonly AppDbContext _appDbContext;
 
-        public TagRepository(AppDbContext database)
+        public TagRepository(AppDbContext appDbContext)
         {
-            _database = database;
+            _appDbContext = appDbContext;
         }
 
         public async Task<IEnumerable<Tag>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            return await _database.Tags
+            return await _appDbContext.Tags
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
         }
 
         public async Task<Tag?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await _database.Tags
+            return await _appDbContext.Tags
                 .AsNoTracking()
-                .FirstOrDefaultAsync(user => user.Id == id, cancellationToken);
+                .FirstOrDefaultAsync(tag => tag.Id == id, cancellationToken);
         }
 
         public async Task AddAsync(Tag tag, CancellationToken cancellationToken = default)
         {
-            await _database.Tags.AddAsync(tag, cancellationToken);
-            await _database.SaveChangesAsync(cancellationToken);
+            await _appDbContext.Tags.AddAsync(tag, cancellationToken);
+            await _appDbContext.SaveChangesAsync(cancellationToken);
         }
 
         public async Task UpdateAsync(Tag tag, CancellationToken cancellationToken = default)
         {
-            _database.Tags.Update(tag);
-            await _database.SaveChangesAsync(cancellationToken);
+            _appDbContext.Tags.Update(tag);
+            await _appDbContext.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            var entity = await _database.Tags.FindAsync(new object[] { id }, cancellationToken);
-            if (entity is not null)
+            var tagEntity = await _appDbContext.Tags.FindAsync(new object[] { id }, cancellationToken);
+            
+            if (tagEntity is not null)
             {
-                _database.Tags.Remove(entity);
-                await _database.SaveChangesAsync(cancellationToken);
+                _appDbContext.Tags.Remove(tagEntity);
+                await _appDbContext.SaveChangesAsync(cancellationToken);
             }
         }
     }

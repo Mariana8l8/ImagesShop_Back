@@ -7,54 +7,55 @@ namespace ImagesShop.Infrastructure.Repositories
 {
     public class OrderItemRepository : IOrderItemRepository
     {
-        private readonly AppDbContext _database;
+        private readonly AppDbContext _appDbContext;
 
-        public OrderItemRepository(AppDbContext database)
+        public OrderItemRepository(AppDbContext appDbContext)
         {
-            _database = database;
+            _appDbContext = appDbContext;
         }
 
         public async Task<IEnumerable<OrderItem>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            return await _database.OrderItems
+            return await _appDbContext.OrderItems
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
         }
 
         public async Task<OrderItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await _database.OrderItems
+            return await _appDbContext.OrderItems
                 .AsNoTracking()
-                .FirstOrDefaultAsync(oi => oi.Id == id, cancellationToken);
+                .FirstOrDefaultAsync(orderItem => orderItem.Id == id, cancellationToken);
         }
 
         public async Task AddAsync(OrderItem orderItem, CancellationToken cancellationToken = default)
         {
-            await _database.OrderItems.AddAsync(orderItem, cancellationToken);
-            await _database.SaveChangesAsync(cancellationToken);
+            await _appDbContext.OrderItems.AddAsync(orderItem, cancellationToken);
+            await _appDbContext.SaveChangesAsync(cancellationToken);
         }
 
         public async Task UpdateAsync(OrderItem orderItem, CancellationToken cancellationToken = default)
         {
-            _database.OrderItems.Update(orderItem);
-            await _database.SaveChangesAsync(cancellationToken);
+            _appDbContext.OrderItems.Update(orderItem);
+            await _appDbContext.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            var entity = await _database.OrderItems.FindAsync(new object[] { id }, cancellationToken);
-            if (entity is not null)
+            var orderItemEntity = await _appDbContext.OrderItems.FindAsync(new object[] { id }, cancellationToken);
+            
+            if (orderItemEntity is not null)
             {
-                _database.OrderItems.Remove(entity);
-                await _database.SaveChangesAsync(cancellationToken);
+                _appDbContext.OrderItems.Remove(orderItemEntity);
+                await _appDbContext.SaveChangesAsync(cancellationToken);
             }
         }
 
         public async Task<IEnumerable<OrderItem>> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default)
         {
-            return await _database.OrderItems
+            return await _appDbContext.OrderItems
                 .AsNoTracking()
-                .Where(oi => oi.OrderId == orderId)
+                .Where(orderItem => orderItem.OrderId == orderId)
                 .ToListAsync(cancellationToken);
         }
     }

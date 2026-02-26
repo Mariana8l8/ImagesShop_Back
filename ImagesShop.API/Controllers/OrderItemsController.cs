@@ -6,8 +6,8 @@ using ImagesShop.Domain.Entities;
 
 namespace ImagesShop.API.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     [Authorize(Policy = "AdminOnly")]
     public class OrderItemsController : ControllerBase
     {
@@ -20,63 +20,71 @@ namespace ImagesShop.API.Controllers
 
         [HttpGet(Name = "GetAllOrderItems")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
-            var list = await _orderItemService.GetAllAsync(cancellationToken);
-            var dto = list.Select(MapToDto);
-            return Ok(dto);
+            var orderItems = await _orderItemService.GetAllAsync(cancellationToken);
+            var orderItemsDto = orderItems.Select(orderItem => MapToDto(orderItem));
+            
+            return Ok(orderItemsDto);
         }
 
         [HttpGet("{id:guid}", Name = "GetOrderItemById")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
         {
-            var item = await _orderItemService.GetByIdAsync(id, cancellationToken);
-            return item is null ? NotFound() : Ok(MapToDto(item));
+            var orderItem = await _orderItemService.GetByIdAsync(id, cancellationToken);
+            
+            if (orderItem is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(MapToDto(orderItem));
         }
 
         [HttpGet("order/{orderId:guid}", Name = "GetItemsByOrderId")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetByOrderId(Guid orderId, CancellationToken cancellationToken)
         {
-            var items = await _orderItemService.GetByOrderIdAsync(orderId, cancellationToken);
-            return Ok(items.Select(MapToDto));
+            var orderItems = await _orderItemService.GetByOrderIdAsync(orderId, cancellationToken);
+            var orderItemsDto = orderItems.Select(orderItem => MapToDto(orderItem));
+            
+            return Ok(orderItemsDto);
         }
 
         [HttpPost(Name = "CreateOrderItem")]
         [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Create([FromBody] OrderItemDTO dto, CancellationToken cancellationToken)
+        public async Task<IActionResult> Create([FromBody] OrderItemDTO orderItemDto, CancellationToken cancellationToken)
         {
-            var entity = MapToEntity(dto);
-            var created = await _orderItemService.CreateAsync(entity, cancellationToken);
-            return CreatedAtAction(nameof(Get), new { id = created.Id }, MapToDto(created));
+            var orderItemEntity = MapToEntity(orderItemDto);
+            var createdOrderItem = await _orderItemService.CreateAsync(orderItemEntity, cancellationToken);
+            
+            return CreatedAtAction(nameof(Get), new { id = createdOrderItem.Id }, MapToDto(createdOrderItem));
         }
 
         [HttpPut("{id:guid}", Name = "UpdateOrderItem")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Update(Guid id, [FromBody] OrderItemDTO dto, CancellationToken cancellationToken)
+        public async Task<IActionResult> Update(Guid id, [FromBody] OrderItemDTO orderItemDto, CancellationToken cancellationToken)
         {
-            if (id != dto.Id) return BadRequest();
-            var entity = MapToEntity(dto);
-            await _orderItemService.UpdateAsync(entity, cancellationToken);
+            if (id != orderItemDto.Id)
+            {
+                return BadRequest("Order item ID mismatch.");
+            }
+
+            var orderItemEntity = MapToEntity(orderItemDto);
+            await _orderItemService.UpdateAsync(orderItemEntity, cancellationToken);
+            
             return NoContent();
         }
 
         [HttpDelete("{id:guid}", Name = "DeleteOrderItem")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
         {
             await _orderItemService.DeleteAsync(id, cancellationToken);
+            
             return NoContent();
         }
 
@@ -87,11 +95,11 @@ namespace ImagesShop.API.Controllers
             ImageId = orderItem.ImageId
         };
 
-        private static OrderItem MapToEntity(OrderItemDTO dto) => new OrderItem
+        private static OrderItem MapToEntity(OrderItemDTO orderItemDto) => new OrderItem
         {
-            Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id,
-            OrderId = dto.OrderId,
-            ImageId = dto.ImageId
+            Id = orderItemDto.Id == Guid.Empty ? Guid.NewGuid() : orderItemDto.Id,
+            OrderId = orderItemDto.OrderId,
+            ImageId = orderItemDto.ImageId
         };
     }
 }

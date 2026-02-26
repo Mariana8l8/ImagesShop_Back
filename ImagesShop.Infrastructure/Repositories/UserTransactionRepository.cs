@@ -7,26 +7,26 @@ namespace ImagesShop.Infrastructure.Repositories
 {
     public class UserTransactionRepository : IUserTransactionRepository
     {
-        private readonly AppDbContext _db;
+        private readonly AppDbContext _appDbContext;
 
-        public UserTransactionRepository(AppDbContext db)
+        public UserTransactionRepository(AppDbContext appDbContext)
         {
-            _db = db;
+            _appDbContext = appDbContext;
         }
 
         public async Task<IEnumerable<UserTransaction>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            return await _db.UserTransactions
+            return await _appDbContext.UserTransactions
                 .AsNoTracking()
-                .Where(t => t.UserId == userId)
-                .OrderByDescending(t => t.CreatedAt)
+                .Where(userTransaction => userTransaction.UserId == userId)
+                .OrderByDescending(userTransaction => userTransaction.CreatedAt)
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task AddAsync(UserTransaction transaction, CancellationToken cancellationToken = default)
+        public async Task AddAsync(UserTransaction userTransaction, CancellationToken cancellationToken = default)
         {
-            await _db.UserTransactions.AddAsync(transaction, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
+            await _appDbContext.UserTransactions.AddAsync(userTransaction, cancellationToken);
+            await _appDbContext.SaveChangesAsync(cancellationToken);
         }
     }
 }

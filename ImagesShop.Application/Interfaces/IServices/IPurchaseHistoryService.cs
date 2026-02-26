@@ -9,5 +9,6 @@ namespace ImagesShop.Application.Interfaces.IServices
         Task<PurchaseHistory> CreateAsync(PurchaseHistory PurchaseHistory, CancellationToken cancellationToken = default);
         Task UpdateAsync(PurchaseHistory PurchaseHistory, CancellationToken cancellationToken = default);
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<byte[]> ExportToExcelAsync(CancellationToken cancellationToken = default);
     }
 }

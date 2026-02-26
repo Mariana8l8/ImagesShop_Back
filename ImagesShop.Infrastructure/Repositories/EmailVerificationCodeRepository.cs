@@ -7,46 +7,48 @@ namespace ImagesShop.Infrastructure.Repositories
 {
     public class EmailVerificationCodeRepository : IEmailVerificationCodeRepository
     {
-        private readonly AppDbContext _db;
+        private readonly AppDbContext _appDbContext;
 
-        public EmailVerificationCodeRepository(AppDbContext db)
+        public EmailVerificationCodeRepository(AppDbContext appDbContext)
         {
-            _db = db;
+            _appDbContext = appDbContext;
         }
 
-        public async Task AddAsync(EmailVerificationCode code, CancellationToken cancellationToken = default)
+        public async Task AddAsync(EmailVerificationCode emailVerificationCode, CancellationToken cancellationToken = default)
         {
-            await _db.EmailVerificationCodes.AddAsync(code, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
+            await _appDbContext.EmailVerificationCodes.AddAsync(emailVerificationCode, cancellationToken);
+            await _appDbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task AddForEmailAsync(string email, EmailVerificationCode code, CancellationToken cancellationToken = default)
+        public async Task AddForEmailAsync(string email, EmailVerificationCode emailVerificationCode, CancellationToken cancellationToken = default)
         {
-            code.Email = email;
-            await _db.EmailVerificationCodes.AddAsync(code, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
+            emailVerificationCode.Email = email;
+            await _appDbContext.EmailVerificationCodes.AddAsync(emailVerificationCode, cancellationToken);
+            await _appDbContext.SaveChangesAsync(cancellationToken);
         }
 
         public Task<EmailVerificationCode?> GetLatestByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
-            return _db.EmailVerificationCodes
-                .Where(x => x.Email == email)
-                .OrderByDescending(x => x.CreatedAt)
+            return _appDbContext.EmailVerificationCodes
+                .Where(verificationCode => verificationCode.Email == email)
+                .OrderByDescending(verificationCode => verificationCode.CreatedAt)
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
         public Task<EmailVerificationCode?> GetLatestActiveByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
-            return _db.EmailVerificationCodes
-                .Where(x => x.Email == email && x.UsedAt == null && x.ExpiresAt > DateTime.UtcNow)
-                .OrderByDescending(x => x.CreatedAt)
+            return _appDbContext.EmailVerificationCodes
+                .Where(verificationCode => verificationCode.Email == email && 
+                                           verificationCode.UsedAt == null && 
+                                           verificationCode.ExpiresAt > DateTime.UtcNow)
+                .OrderByDescending(verificationCode => verificationCode.CreatedAt)
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task MarkUsedAsync(EmailVerificationCode code, CancellationToken cancellationToken = default)
+        public async Task MarkUsedAsync(EmailVerificationCode emailVerificationCode, CancellationToken cancellationToken = default)
         {
-            code.UsedAt = DateTime.UtcNow;
-            await _db.SaveChangesAsync(cancellationToken);
+            emailVerificationCode.UsedAt = DateTime.UtcNow;
+            await _appDbContext.SaveChangesAsync(cancellationToken);
         }
     }
 }

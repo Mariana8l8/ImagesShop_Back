@@ -12,39 +12,48 @@ namespace ImagesShop.API.Controllers
     [Authorize]
     public class UserTransactionsController : ControllerBase
     {
-        private readonly IUserTransactionService _transactions;
+        private readonly IUserTransactionService _userTransactionService;
 
-        public UserTransactionsController(IUserTransactionService transactions)
+        public UserTransactionsController(IUserTransactionService userTransactionService)
         {
-            _transactions = transactions;
+            _userTransactionService = userTransactionService;
         }
 
         [HttpGet("me")]
-        public async Task<IActionResult> GetMy(CancellationToken cancellationToken)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetMyTransactions(CancellationToken cancellationToken)
         {
-            var userId = GetUserId();
-            if (userId is null) return Unauthorized();
+            var userId = GetUserIdOrThrow();
 
-            var items = await _transactions.GetMyAsync(userId.Value, cancellationToken);
-            return Ok(items.Select(MapToDto));
+            var userTransactions = await _userTransactionService.GetMyAsync(userId, cancellationToken);
+            var userTransactionsDto = userTransactions.Select(transaction => MapToDto(transaction));
+            
+            return Ok(userTransactionsDto);
         }
 
-        private static UserTransactionDTO MapToDto(UserTransaction tx) => new()
+        private static UserTransactionDTO MapToDto(UserTransaction userTransaction) => new()
         {
-            Id = tx.Id,
-            Type = tx.Type,
-            Amount = tx.Amount,
-            BalanceBefore = tx.BalanceBefore,
-            BalanceAfter = tx.BalanceAfter,
-            CreatedAtUtc = tx.CreatedAt,
-            OrderId = tx.OrderId,
-            Status = tx.Status
+            Id = userTransaction.Id,
+            Type = userTransaction.Type,
+            Amount = userTransaction.Amount,
+            BalanceBefore = userTransaction.BalanceBefore,
+            BalanceAfter = userTransaction.BalanceAfter,
+            CreatedAtUtc = userTransaction.CreatedAt,
+            OrderId = userTransaction.OrderId,
+            Status = userTransaction.Status
         };
 
-        private Guid? GetUserId()
+        private Guid GetUserIdOrThrow()
         {
-            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(ClaimTypes.Name);
-            return Guid.TryParse(sub, out var id) ? id : null;
+            var nameIdentifier = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(ClaimTypes.Name);
+            
+            if (!Guid.TryParse(nameIdentifier, out var userId)) 
+            {
+                throw new UnauthorizedAccessException();
+            }
+            
+            return userId;
         }
     }
 }

@@ -1,3 +1,5 @@
+using ImagesShop.API.Filters;
+using ImagesShop.API.Middleware;
 using ImagesShop.Application;
 using ImagesShop.Application.DependencyInjection;
 using ImagesShop.Infrastructure.DependencyInjection;
@@ -9,7 +11,10 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ValidationFilter>();
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -88,13 +93,14 @@ builder.Services.AddCors(options =>
             .AllowCredentials();
     });
 });
-builder.Services.AddMvc();
 Log.Logger = new LoggerConfiguration().MinimumLevel.Information()
    .WriteTo.File("log/ImagesShopLogs.txt", rollingInterval: RollingInterval.Day).CreateLogger();
 
 builder.Host.UseSerilog();
 
 var app = builder.Build();
+
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
@@ -108,6 +114,8 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseMiddleware<TransactionMiddleware>();
+
 app.MapControllers();
 
 using (var scope = app.Services.CreateScope())
@@ -117,7 +125,4 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
-
-var cs = builder.Configuration.GetConnectionString("DefaultConnection");
-Console.WriteLine($"CS: {cs}");
 

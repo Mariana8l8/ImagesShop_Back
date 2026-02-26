@@ -7,41 +7,43 @@ namespace ImagesShop.Infrastructure.Repositories
 {
     public class PendingRegistrationRepository : IPendingRegistrationRepository
     {
-        private readonly AppDbContext _db;
+        private readonly AppDbContext _appDbContext;
 
-        public PendingRegistrationRepository(AppDbContext db)
+        public PendingRegistrationRepository(AppDbContext appDbContext)
         {
-            _db = db;
+            _appDbContext = appDbContext;
         }
 
         public Task<PendingRegistration?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
-            return _db.PendingRegistrations.FirstOrDefaultAsync(x => x.Email == email, cancellationToken);
+            return _appDbContext.PendingRegistrations.FirstOrDefaultAsync(pendingRegistration => pendingRegistration.Email == email, cancellationToken);
         }
 
-        public async Task UpsertAsync(PendingRegistration pending, CancellationToken cancellationToken = default)
+        public async Task UpsertAsync(PendingRegistration pendingRegistration, CancellationToken cancellationToken = default)
         {
-            var existing = await _db.PendingRegistrations.FirstOrDefaultAsync(x => x.Email == pending.Email, cancellationToken);
-            if (existing is null)
+            var existingPendingRegistration = await _appDbContext.PendingRegistrations
+                .FirstOrDefaultAsync(item => item.Email == pendingRegistration.Email, cancellationToken);
+            
+            if (existingPendingRegistration is null)
             {
-                await _db.PendingRegistrations.AddAsync(pending, cancellationToken);
+                await _appDbContext.PendingRegistrations.AddAsync(pendingRegistration, cancellationToken);
             }
             else
             {
-                existing.Name = pending.Name;
-                existing.PasswordHash = pending.PasswordHash;
-                existing.PasswordSalt = pending.PasswordSalt;
-                existing.CreatedAt = pending.CreatedAt;
-                existing.ExpiresAt = pending.ExpiresAt;
+                existingPendingRegistration.Name = pendingRegistration.Name;
+                existingPendingRegistration.PasswordHash = pendingRegistration.PasswordHash;
+                existingPendingRegistration.PasswordSalt = pendingRegistration.PasswordSalt;
+                existingPendingRegistration.CreatedAt = pendingRegistration.CreatedAt;
+                existingPendingRegistration.ExpiresAt = pendingRegistration.ExpiresAt;
             }
 
-            await _db.SaveChangesAsync(cancellationToken);
+            await _appDbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task DeleteAsync(PendingRegistration pending, CancellationToken cancellationToken = default)
+        public async Task DeleteAsync(PendingRegistration pendingRegistration, CancellationToken cancellationToken = default)
         {
-            _db.PendingRegistrations.Remove(pending);
-            await _db.SaveChangesAsync(cancellationToken);
+            _appDbContext.PendingRegistrations.Remove(pendingRegistration);
+            await _appDbContext.SaveChangesAsync(cancellationToken);
         }
     }
 }

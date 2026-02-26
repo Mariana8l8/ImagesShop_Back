@@ -11,5 +11,6 @@ namespace ImagesShop.Application.Interfaces.IServices
         Task UpdateAsync(User user, CancellationToken cancellationToken = default);
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
         Task UpdateNameAsync(Guid userId, string name, CancellationToken cancellationToken = default);
+        Task<decimal> TopUpAsync(Guid userId, decimal amount, CancellationToken cancellationToken = default);
     }
 }
